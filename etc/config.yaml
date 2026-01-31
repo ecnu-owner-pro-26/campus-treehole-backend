@@ -1,0 +1,36 @@
+# 应用配置文件
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+  mode: "debug" # debug, release
+
+database:
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: ""
+  database: "campus_memory"
+  charset: "utf8mb4"
+  max_idle_conns: 10
+  max_open_conns: 100
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+
+storage:
+  type: "local" # local, oss, s3
+  local_path: "./storage"
+  base_url: "http://localhost:8080/storage"
+
+jwt:
+  secret: "your-secret-key"
+  expiration: 86400 # 24小时
+
+log:
+  level: "info" # debug, info, warn, error
+  output: "stdout" # stdout, file
+  file_path: "./logs/app.log"
