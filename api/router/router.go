@@ -11,7 +11,6 @@ func SetupRoutes() {
 	// commentHandler := handler.NewCommentHandler(db)
 	// locationHandler := handler.NewLocationHandler(db)
 	// campusHandler := handler.NewCampusHandler(db)
-	// likeHandler := handler.NewLikeHandler(likeService)
 
 	// API路由组
 	// api := router.Group("/api")
@@ -46,8 +45,9 @@ func SetupRoutes() {
 	//         memories.PUT("/:id", memoryHandler.UpdateMemory)        // 更新记忆
 	//         memories.DELETE("/:id", memoryHandler.DeleteMemory)     // 删除记忆
 
-	//         // 记忆点赞 - 使用新的翻转接口
-	//         memories.POST("/:id/like", likeHandler.ToggleMemoryLike) // 翻转记忆点赞状态
+	//         // 记忆点赞 - 支持给记忆点赞
+	//         memories.POST("/:id/like", memoryHandler.LikeMemory)     // 点赞记忆
+	//         memories.DELETE("/:id/like", memoryHandler.UnlikeMemory) // 取消点赞记忆
 
 	//         // 记忆的评论 - 支持给记忆评论
 	//         memories.POST("/:id/comments", commentHandler.CreateComment)   // 创建评论
@@ -58,14 +58,8 @@ func SetupRoutes() {
 	//     comments := authenticated.Group("/comments")
 	//     {
 	//         comments.DELETE("/:id", commentHandler.DeleteComment)     // 删除评论
-	//         comments.POST("/:id/like", likeHandler.ToggleCommentLike) // 翻转评论点赞状态
-	//     }
-
-	//     // 点赞相关路由 - 独立的点赞API
-	//     likes := authenticated.Group("/likes")
-	//     {
-	//         likes.POST("/toggle", likeHandler.ToggleLike)       // 通用翻转点赞接口
-	//         likes.GET("/status", likeHandler.GetLikeStatus)     // 获取点赞状态
+	//         comments.POST("/:id/like", commentHandler.LikeComment)     // 点赞评论
+	//         comments.DELETE("/:id/like", commentHandler.UnlikeComment) // 取消点赞评论
 	//     }
 
 	//     // 地点相关路由 - 支持浏览地点记忆
