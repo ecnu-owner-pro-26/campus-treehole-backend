@@ -1,22 +1,12 @@
 package handler
 
-// LocationHandler 处理地图位置相关的HTTP请求
+// LocationHandler 位置处理器
 type LocationHandler struct {
-	// TODO: 注入application层依赖
+	// TODO: 注入数据库依赖
 }
 
-// NewLocationHandler 创建位置处理器
-func NewLocationHandler() *LocationHandler {
-	// TODO: 初始化handler
-	return &LocationHandler{}
-}
-
-// GetMemoriesByLocation 根据地图位置获取记忆
-func (h *LocationHandler) GetMemoriesByLocation() {
-	// TODO: 实现根据位置获取记忆的逻辑
-}
-
-// GetNearbyMemories 获取附近的记忆
-func (h *LocationHandler) GetNearbyMemories() {
-	// TODO: 实现获取附近记忆的逻辑
+// GetLocationMemories 获取指定地点的记忆列表
+func (h *LocationHandler) GetLocationMemories() {
+	// TODO: 实现获取指定地点记忆列表逻辑
+	// 用户选择具体地点后，浏览该地点的所有记忆
 }

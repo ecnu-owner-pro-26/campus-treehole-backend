@@ -2,5 +2,5 @@ package middleware
 
 // CORSMiddleware 跨域中间件
 func CORSMiddleware() {
-	// TODO: 实现CORS配置
+	// TODO: 实现CORS跨域处理
 }

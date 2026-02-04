@@ -1,14 +1,8 @@
 package repo
 
-// MemoryRepo 记忆仓储层
+// MemoryRepo 记忆数据访问层
 type MemoryRepo struct {
 	// TODO: 注入数据库连接
-}
-
-// NewMemoryRepo 创建记忆仓储
-func NewMemoryRepo() *MemoryRepo {
-	// TODO: 初始化仓储
-	return &MemoryRepo{}
 }
 
 // Create 创建记忆记录
@@ -43,6 +37,6 @@ func (r *MemoryRepo) Delete() error {
 
 // GetByLocation 根据位置获取记忆
 func (r *MemoryRepo) GetByLocation() error {
-	// TODO: 实现根据地理位置查询的逻辑
+	// TODO: 实现根据地理位置查询逻辑
 	return nil
 }

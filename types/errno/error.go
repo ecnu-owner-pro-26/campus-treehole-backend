@@ -26,4 +26,8 @@ var (
 	ErrCommentNotFound   = New(2001, "留言不存在")
 	ErrCommentCreateFail = New(2002, "创建留言失败")
 	ErrFileUploadFail    = New(3001, "文件上传失败")
+	ErrAlreadyLiked      = New(4001, "已经点赞过了")
+	ErrNotLiked          = New(4002, "还没有点赞")
+	ErrLikeCreateFail    = New(4003, "点赞失败")
+	ErrLikeDeleteFail    = New(4004, "取消点赞失败")
 )

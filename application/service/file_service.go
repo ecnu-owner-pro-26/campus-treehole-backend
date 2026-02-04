@@ -1,14 +1,8 @@
 package service
 
-// FileService 文件服务层
+// FileService 文件服务
 type FileService struct {
-	// TODO: 注入infra层依赖
-}
-
-// NewFileService 创建文件服务
-func NewFileService() *FileService {
-	// TODO: 初始化服务
-	return &FileService{}
+	// TODO: 注入依赖
 }
 
 // UploadImage 上传图片
@@ -31,6 +25,6 @@ func (s *FileService) DeleteFile() error {
 
 // GetFileURL 获取文件URL
 func (s *FileService) GetFileURL() (string, error) {
-	// TODO: 实现获取文件URL的逻辑
+	// TODO: 实现获取文件URL逻辑
 	return "", nil
 }

@@ -12,8 +12,14 @@
 # 依赖目录
 vendor/
 
+# SQLite数据库文件
+*.db
+*.db-shm
+*.db-wal
+data/
+
 # 配置文件（可能包含敏感信息）
-config/config.local.yaml
+etc/config.local.yaml
 
 # 上传的文件
 storage/*
@@ -28,6 +34,7 @@ storage/*
 
 # 日志文件
 *.log
+logs/
 
 # 操作系统文件
 .DS_Store

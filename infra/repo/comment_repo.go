@@ -1,14 +1,8 @@
 package repo
 
-// CommentRepo 留言仓储层
+// CommentRepo 留言数据访问层
 type CommentRepo struct {
 	// TODO: 注入数据库连接
-}
-
-// NewCommentRepo 创建留言仓储
-func NewCommentRepo() *CommentRepo {
-	// TODO: 初始化仓储
-	return &CommentRepo{}
 }
 
 // Create 创建留言记录
