@@ -2,7 +2,7 @@ package handler
 
 // MemoryHandler 记忆处理器
 type MemoryHandler struct {
-	// TODO: 注入数据库依赖
+	// TODO: 注入依赖
 }
 
 // CreateMemory 创建记忆
@@ -30,12 +30,3 @@ func (h *MemoryHandler) DeleteMemory() {
 	// TODO: 实现删除记忆逻辑
 }
 
-// LikeMemory 点赞记忆
-func (h *MemoryHandler) LikeMemory() {
-	// TODO: 实现点赞记忆逻辑
-}
-
-// UnlikeMemory 取消点赞记忆
-func (h *MemoryHandler) UnlikeMemory() {
-	// TODO: 实现取消点赞记忆逻辑
-}
