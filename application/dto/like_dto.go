@@ -1,11 +1,13 @@
 package dto
 
-// ToggleLikeReq 切换点赞请求
-type ToggleLikeReq struct {
-	// TODO: 定义请求参数
-}
+// 点赞目标类型常量
+const (
+	LikeTargetTypeMemory  int8 = 1 // 记忆
+	LikeTargetTypeComment int8 = 2 // 评论
+)
 
-// ToggleLikeResp 切换点赞响应
-type ToggleLikeResp struct {
-	// TODO: 定义响应参数
+// ToggleLikeResponse 切换点赞响应
+type ToggleLikeResponse struct {
+	IsLiked   bool  `json:"is_liked"`   // 当前点赞状态（true-已点赞 false-未点赞）
+	LikeCount int64 `json:"like_count"` // 点赞总数
 }

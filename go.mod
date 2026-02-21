@@ -18,4 +18,16 @@ require (
 	
 	// 密码加密
 	golang.org/x/crypto v0.17.0
+	
+	// 配置管理
+	github.com/joho/godotenv v1.5.1
+	
+	// 数据验证
+	github.com/go-playground/validator/v10 v10.16.0
+	
+	// 日志
+	github.com/sirupsen/logrus v1.9.3
+	
+	// 测试
+	github.com/stretchr/testify v1.8.4
 )
