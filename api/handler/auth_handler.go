@@ -40,26 +40,40 @@ func (h *AuthHandler) WechatLogin(c *gin.Context) {
 	util.SuccessResponse(c, resp)
 }
 
+// GetProfile godoc
+// @Summary 获取个人信息
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.UserProfileResponse
+// @Router /api/auth/profile [get]
 // GetProfile 获取个人信息
 func (h *AuthHandler) GetProfile(c *gin.Context) {
-	// 1. 从context获取用户ID
+	// 从context获取用户ID
 	userID, exists := c.Get("user_id")
 	if !exists {
 		util.ErrorResponse(c, 401, "未登录")
 		return
 	}
 
-	// 2. 调用服务层
-	resp, err := h.authService.GetUserProfile(userID.(int64))
+	// 调用服务层
+	resp, err := h.authService.GetUserProfile(c.Request.Context(), userID.(int64))
 	if err != nil {
 		util.ErrorResponse(c, 500, "获取用户信息失败: "+err.Error())
 		return
 	}
 
-	// 3. 返回成功响应
+	// 返回成功响应
 	util.SuccessResponse(c, resp)
 }
 
+// UpdateProfile godoc
+// @Summary 更新个人信息
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body dto.UpdateProfileRequest true "更新信息"
+// @Success 200 {object} util.Response
+// @Router /api/auth/profile [put]
 // UpdateProfile 更新个人信息
 func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	// 1. 从context获取用户ID
@@ -69,20 +83,20 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	// 2. 绑定请求参数
+	// 绑定请求参数
 	var req dto.UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		util.ErrorResponse(c, 400, "请求参数错误: "+err.Error())
 		return
 	}
 
-	// 3. 调用服务层
-	err := h.authService.UpdateUserProfile(userID.(int64), &req)
+	// 调用服务层
+	err := h.authService.UpdateUserProfile(c.Request.Context(), userID.(int64), &req)
 	if err != nil {
 		util.ErrorResponse(c, 500, "更新用户信息失败: "+err.Error())
 		return
 	}
 
-	// 4. 返回成功响应
+	// 返回成功响应
 	util.SuccessResponse(c, gin.H{"message": "更新成功"})
 }

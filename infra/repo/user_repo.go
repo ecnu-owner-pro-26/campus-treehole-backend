@@ -2,6 +2,8 @@ package repo
 
 import (
 	"campus-memory/infra/model"
+	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -42,9 +44,9 @@ func (r *UserRepo) CreateUser(user *model.UserModel) error {
 }
 
 // GetUserByID 根据用户ID获取用户
-func (r *UserRepo) GetUserByID(id int64) (*model.UserModel, error) {
+func (r *UserRepo) GetUserByID(ctx context.Context, id int64) (*model.UserModel, error) {
 	var user model.UserModel
-	err := r.db.Where("id = ?", id).First(&user).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,5 +55,6 @@ func (r *UserRepo) GetUserByID(id int64) (*model.UserModel, error) {
 
 // UpdateUser 更新用户信息（昵称、头像、默认校区等）
 func (r *UserRepo) UpdateUser(user *model.UserModel) error {
+	user.UpdatedAt = time.Now()
 	return r.db.Save(user).Error
 }
