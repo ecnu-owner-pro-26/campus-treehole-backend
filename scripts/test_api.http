@@ -23,29 +23,31 @@ GET {{baseUrl}}/campuses/1/locations
 Accept: application/json
 
 # ===========================================
-# 2. 用户认证相关接口测试
+# 2. 用户认证相关接口测试（微信登录）
 # ===========================================
 
-### 用户注册
-POST {{baseUrl}}/auth/register
+### 微信登录（首次登录）
+# @name wechatLogin
+POST {{baseUrl}}/auth/wechat/login
 Content-Type: {{contentType}}
 
 {
-  "username": "testuser",
-  "password": "password123",
-  "email": "test@example.com",
-  "phone": "13800138000",
-  "nickname": "测试用户"
+  "code": "test_wx_code_123456",
+  "nickname": "测试用户",
+  "avatar": "https://example.com/avatar.jpg"
 }
 
-### 用户登录
-# @name login
-POST {{baseUrl}}/auth/login
+### 提取登录token
+@auth_token = {{wechatLogin.response.body.data.token}}
+
+### 微信登录（再次登录，测试已有用户）
+POST {{baseUrl}}/auth/wechat/login
 Content-Type: {{contentType}}
 
 {
-  "username": "testuser",
-  "password": "password123"
+  "code": "test_wx_code_123456",
+  "nickname": "更新后的昵称",
+  "avatar": "https://example.com/new_avatar.jpg"
 }
 
 ### 提取登录token
