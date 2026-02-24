@@ -10,10 +10,14 @@ const (
 	ErrCodeNotFound     = 404
 	ErrCodeServerError  = 500
 
-	// 业务错误码
-	ErrCodeMemoryNotFound    = 1001
-	ErrCodeMemoryCreateFail  = 1002
-	ErrCodeCommentNotFound   = 2001
-	ErrCodeCommentCreateFail = 2002
-	ErrCodeFileUploadFail    = 3001
+	// 记忆相关 (11xxx)
+	ErrCodeMemoryNotFound   = 11001
+	ErrCodeMemoryCreateFail = 11002
+
+	// 评论相关 (12xxx)
+	ErrCodeCommentNotFound   = 12001
+	ErrCodeCommentCreateFail = 12002
+
+	// 文件相关 (13xxx)
+	ErrCodeFileUploadFail = 13001
 )
