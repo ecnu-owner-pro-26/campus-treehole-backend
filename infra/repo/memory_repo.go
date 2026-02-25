@@ -89,14 +89,14 @@ func (r *MemoryRepo) IncrementViewCount(id int64) error {
 		Update("view_count", gorm.Expr("view_count + 1")).Error
 }
 
-// UpdateCounts 更新统计数据
+// UpdateCounts 更新统计数据（增量更新）
 func (r *MemoryRepo) UpdateCounts(id int64, likeCount, commentCount *int64) error {
 	updates := make(map[string]interface{})
 	if likeCount != nil {
-		updates["like_count"] = *likeCount
+		updates["like_count"] = gorm.Expr("like_count + ?", *likeCount)
 	}
 	if commentCount != nil {
-		updates["comment_count"] = *commentCount
+		updates["comment_count"] = gorm.Expr("comment_count + ?", *commentCount)
 	}
 	return r.db.Model(&model.MemoryModel{}).Where("id = ?", id).Updates(updates).Error
 }

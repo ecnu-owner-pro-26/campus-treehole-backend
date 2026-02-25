@@ -105,7 +105,7 @@ func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryRe
 	// 5. 检查当前用户是否已点赞
 	isLiked := false
 	if currentUserID != nil {
-		isLiked, _ = s.likeRepo.IsLiked(*currentUserID, id)
+		isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, id)
 	}
 
 	// 6. 组装响应
@@ -146,7 +146,7 @@ func (s *MemoryService) ListMemories(req *dto.MemoryListRequest, currentUserID *
 		// 检查是否已点赞
 		isLiked := false
 		if currentUserID != nil {
-			isLiked, _ = s.likeRepo.IsLiked(*currentUserID, memory.ID)
+			isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, memory.ID)
 		}
 
 		memoryResponses = append(memoryResponses, *s.assembler.ToMemoryResponse(memory, creator, images, isLiked))
@@ -176,12 +176,39 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 		return errno.ErrForbidden
 	}
 
-	// 3. 更新字段
+	// 3. 如果更新了 LocationID，需要同步更新 LocationName
+	if req.LocationID != nil && (memory.LocationID == nil || *req.LocationID != *memory.LocationID) {
+		location, err := s.locationRepo.GetByID(*req.LocationID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.ErrLocationNotFound
+			}
+			return err
+		}
+		memory.LocationName = location.Name
+	}
+
+	// 4. 更新其他字段
 	s.assembler.UpdateMemoryModel(memory, req)
 
-	// 4. 保存到数据库
+	// 5. 保存到数据库
 	if err := s.memoryRepo.Update(memory); err != nil {
 		return errno.ErrMemoryUpdateFail
+	}
+
+	// 6. 更新图片关联(如果有)
+	if req.ImageURLs != nil {
+		// 删除旧图片
+		_ = s.imageRepo.DeleteByMemoryID(id)
+		// 添加新图片
+		for i, url := range req.ImageURLs {
+			image := &model.ImageModel{
+				MemoryID:  id,
+				URL:       url,
+				SortOrder: i,
+			}
+			_ = s.imageRepo.Create(image)
+		}
 	}
 
 	return nil
