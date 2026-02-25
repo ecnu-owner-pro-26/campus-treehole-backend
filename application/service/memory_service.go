@@ -5,7 +5,6 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/model"
 	"campus-memory/infra/repo"
-	"campus-memory/types/consts"
 	"campus-memory/types/errno"
 	"gorm.io/gorm"
 )
@@ -44,7 +43,7 @@ func (s *MemoryService) CreateMemory(req *dto.CreateMemoryRequest, creatorID int
 	location, err := s.locationRepo.GetByID(*req.LocationID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errno.New(consts.ErrCodeNotFound, "地点不存在")
+			return nil, errno.ErrLocationNotFound
 		}
 		return nil, err
 	}
@@ -54,7 +53,7 @@ func (s *MemoryService) CreateMemory(req *dto.CreateMemoryRequest, creatorID int
 
 	// 3. 保存到数据库
 	if err := s.memoryRepo.Create(memory); err != nil {
-		return nil, errno.New(consts.ErrCodeMemoryCreateFail, "创建记忆失败")
+		return nil, errno.ErrMemoryCreateFail
 	}
 
 	// 4. 保存图片关联(如果有)
@@ -86,7 +85,7 @@ func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryRe
 	memory, err := s.memoryRepo.GetByID(id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errno.New(consts.ErrCodeMemoryNotFound, "记忆不存在")
+			return nil, errno.ErrMemoryNotFound
 		}
 		return nil, err
 	}
@@ -167,14 +166,14 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 	memory, err := s.memoryRepo.GetByID(id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return errno.New(consts.ErrCodeMemoryNotFound, "记忆不存在")
+			return errno.ErrMemoryNotFound
 		}
 		return err
 	}
 
 	// 2. 权限检查
 	if memory.CreatorID != userID {
-		return errno.New(consts.ErrCodeForbidden, "无权修改此记忆")
+		return errno.ErrForbidden
 	}
 
 	// 3. 更新字段
@@ -182,7 +181,7 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 
 	// 4. 保存到数据库
 	if err := s.memoryRepo.Update(memory); err != nil {
-		return errno.New(consts.ErrCodeServerError, "更新记忆失败")
+		return errno.ErrMemoryUpdateFail
 	}
 
 	return nil
@@ -194,19 +193,19 @@ func (s *MemoryService) DeleteMemory(id int64, userID int64) error {
 	memory, err := s.memoryRepo.GetByID(id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return errno.New(consts.ErrCodeMemoryNotFound, "记忆不存在")
+			return errno.ErrMemoryNotFound
 		}
 		return err
 	}
 
 	// 2. 权限检查
 	if memory.CreatorID != userID {
-		return errno.New(consts.ErrCodeForbidden, "无权删除此记忆")
+		return errno.ErrForbidden
 	}
 
 	// 3. 软删除
 	if err := s.memoryRepo.Delete(id); err != nil {
-		return errno.New(consts.ErrCodeServerError, "删除记忆失败")
+		return errno.ErrMemoryDeleteFail
 	}
 
 	return nil

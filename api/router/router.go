@@ -58,8 +58,8 @@ func SetupRoutes(r *gin.Engine) {
 			// memories.PUT("/:id", memoryHandler.UpdateMemory)        // 更新记忆
 			// memories.DELETE("/:id", memoryHandler.DeleteMemory)     // 删除记忆
 
-			// 记忆点赞（翻转点赞）
-			// memories.POST("/:id/like", likeHandler.ToggleMemoryLike) // 切换记忆点赞状态
+			// 记忆点赞（统一方法）
+			// memories.POST("/:id/like", likeHandler.ToggleLike) // 切换记忆点赞状态
 
 			// 记忆评论
 			// memories.POST("/:id/comments", commentHandler.CreateComment)   // 创建评论
@@ -71,8 +71,8 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			// comments.DELETE("/:id", commentHandler.DeleteComment)     // 删除评论
 			
-			// 评论点赞（翻转点赞）
-			// comments.POST("/:id/like", likeHandler.ToggleCommentLike) // 切换评论点赞状态
+			// 评论点赞（统一方法）
+			// comments.POST("/:id/like", likeHandler.ToggleLike) // 切换评论点赞状态
 		}
 
 		// 地点相关路由
