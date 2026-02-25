@@ -5,6 +5,7 @@ import (
 	"campus-memory/infra/model"
 	"campus-memory/infra/repo"
 	"campus-memory/utils"
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -32,7 +33,7 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 
 	// 2. 查询用户是否存在
 	user, err := s.userRepo.GetUserByOpenID(session.OpenID)
-	
+
 	if err != nil {
 		// 用户不存在
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -45,12 +46,12 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 				Status:   1, // 正常状态
 				Role:     0, // 普通用户
 			}
-			
+
 			// 如果没有提供昵称，使用默认值
 			if user.Nickname == "" {
 				user.Nickname = "微信用户"
 			}
-			
+
 			if err := s.userRepo.CreateUser(user); err != nil {
 				return nil, err
 			}
@@ -61,23 +62,23 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 	} else {
 		// 4. 用户已存在，更新信息（如果提供了新信息）
 		needUpdate := false
-		
+
 		if req.Nickname != "" && req.Nickname != user.Nickname {
 			user.Nickname = req.Nickname
 			needUpdate = true
 		}
-		
+
 		if req.Avatar != "" && req.Avatar != user.Avatar {
 			user.Avatar = req.Avatar
 			needUpdate = true
 		}
-		
+
 		// 更新 UnionID（如果微信返回了）
 		if session.UnionID != "" && session.UnionID != user.UnionID {
 			user.UnionID = session.UnionID
 			needUpdate = true
 		}
-		
+
 		if needUpdate {
 			if err := s.userRepo.UpdateUser(user); err != nil {
 				return nil, err
@@ -106,9 +107,9 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 }
 
 // GetUserProfile 获取用户详细信息
-func (s *AuthService) GetUserProfile(userID int64) (*dto.UserProfileResponse, error) {
+func (s *AuthService) GetUserProfile(ctx context.Context, userID int64) (*dto.UserProfileResponse, error) {
 	// 查询用户
-	user, err := s.userRepo.GetUserByID(userID)
+	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("用户不存在")
@@ -131,9 +132,9 @@ func (s *AuthService) GetUserProfile(userID int64) (*dto.UserProfileResponse, er
 }
 
 // UpdateUserProfile 更新用户信息
-func (s *AuthService) UpdateUserProfile(userID int64, req *dto.UpdateProfileRequest) error {
+func (s *AuthService) UpdateUserProfile(ctx context.Context, userID int64, req *dto.UpdateProfileRequest) error {
 	// 查询用户
-	user, err := s.userRepo.GetUserByID(userID)
+	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("用户不存在")

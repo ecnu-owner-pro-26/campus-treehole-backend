@@ -51,12 +51,39 @@ Content-Type: {{contentType}}
 }
 
 ### 提取登录token
-@auth_token = {{login.response.body.data.token}}
+@auth_token_updated = {{login.response.body.data.token}}
 
-### 获取用户个人信息
+### 获取用户个人信息(使用首次登录token)
 GET {{baseUrl}}/auth/profile
 Authorization: Bearer {{auth_token}}
 Accept: application/json
+
+### 获取用户个人信息(使用再次登录token)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token_updated}}
+Accept: application/json
+
+### 更新个人信息(使用首次登录token)
+PUT {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "nickname": "通过首次登录token更新的昵称",
+  "avatar": "新头像",
+  "default_campus_id": 1
+}
+
+### 更新个人信息(使用更新后登录token)
+PUT {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token_updated}}
+Content-Type: {{contentType}}
+
+{
+  "nickname": "通过第二次登录token更新的昵称",
+  "avatar": "新头像",
+  "default_campus_id": 1
+}
 
 ### 用户登录 - 错误密码测试
 POST {{baseUrl}}/auth/login
