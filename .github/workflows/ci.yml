@@ -1,2 +1,40 @@
-# TODO: 配置CI/CD流程
-# 包括: 代码检查, 测试, 构建等
+name: Campus Memory CI
+
+# 触发条件：当代码推送到 main 或 develop 分支，或者有 PR 时
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # 任务：测试和构建
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest  # 使用 Ubuntu 虚拟机
+    
+    steps:
+    # 步骤1：检出代码（下载你的代码到虚拟机）
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    # 步骤2：设置 Go 环境
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'  # 使用 Go 1.21 版本
+    
+    # 步骤3：下载依赖
+    - name: Download dependencies
+      run: go mod download
+    
+    # 步骤4：运行测试
+    - name: Run tests
+      run: go test -v ./...
+      # -v 显示详细输出
+      # ./... 表示测试所有包
+    
+    # 步骤5：构建项目
+    - name: Build project
+      run: go build -v ./...
+      # 确保代码能成功编译
