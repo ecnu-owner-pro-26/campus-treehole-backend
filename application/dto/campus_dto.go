@@ -10,14 +10,13 @@ type CampusResponse struct {
 
 // LocationResponse 地点响应
 type LocationResponse struct {
-	// TODO: 定义地点响应字段
-	// ID          int64  `json:"id"`
-	// Name        string `json:"name"`         // 地点名称：图书馆
-	// Category    string `json:"category"`     // 地点类别：library
-	// Address     string `json:"address"`      // 详细地址
-	// Description string `json:"description"`  // 地点描述
-	// Icon        string `json:"icon"`         // 地点图标
-	// MemoryCount int64  `json:"memory_count"` // 记忆数量
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	CampusID    int64  `json:"campus_id"`
+	Category    string `json:"category"`
+	IsActive    bool   `json:"is_active"`
+	SortOrder   int    `json:"sort_order"`
+	MemoryCount int64  `json:"memory_count"`
 }
 
 // CampusLocationsResponse 校区地点列表响应

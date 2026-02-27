@@ -38,8 +38,7 @@ type MemoryListResponse struct {
 
 // UserSimpleInfo 用户简单信息
 type UserSimpleInfo struct {
-	// TODO: 定义用户简单信息字段
-	// ID       int64  `json:"id"`
-	// Nickname string `json:"nickname"`
-	// Avatar   string `json:"avatar"`
+	ID       int64  `json:"id"`
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
 }

@@ -16,9 +16,3 @@ func (s *CampusService) GetCampusLocations() error {
 	// TODO: 实现获取校区地点业务逻辑
 	return nil
 }
-
-// GetLocationsByCategory 根据类别获取地点
-func (s *CampusService) GetLocationsByCategory() error {
-	// TODO: 实现根据类别获取地点业务逻辑
-	return nil
-}
