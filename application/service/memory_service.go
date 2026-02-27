@@ -105,7 +105,7 @@ func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryRe
 	// 5. 检查当前用户是否已点赞
 	isLiked := false
 	if currentUserID != nil {
-		isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, id)
+		isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, id, dto.LikeTargetTypeMemory)
 	}
 
 	// 6. 组装响应
@@ -146,7 +146,7 @@ func (s *MemoryService) ListMemories(req *dto.MemoryListRequest, currentUserID *
 		// 检查是否已点赞
 		isLiked := false
 		if currentUserID != nil {
-			isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, memory.ID)
+			isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, memory.ID, dto.LikeTargetTypeMemory)
 		}
 
 		memoryResponses = append(memoryResponses, *s.assembler.ToMemoryResponse(memory, creator, images, isLiked))
