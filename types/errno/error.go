@@ -21,13 +21,14 @@ func New(code int, message string) *Error {
 
 // 预定义错误
 var (
-	// 通用错误 (2xx, 4xx, 5xx)
-	ErrSuccess      = New(200, "成功")
-	ErrBadRequest   = New(400, "请求参数错误")
-	ErrUnauthorized = New(401, "未登录或token无效")
-	ErrForbidden    = New(403, "无权限访问")
-	ErrNotFound     = New(404, "资源不存在")
-	ErrServerError  = New(500, "服务器内部错误")
+	// 通用错误 (100xx)
+	// 注意：为避免与 HTTP 状态码混淆，通用错误码使用 100xx 段
+	ErrSuccess      = New(200, "成功")        // 保持 200，因为是标准成功码
+	ErrBadRequest   = New(10001, "请求参数错误")
+	ErrUnauthorized = New(10002, "未登录或token无效")
+	ErrForbidden    = New(10003, "无权限访问")
+	ErrNotFound     = New(10004, "资源不存在")
+	ErrServerError  = New(10005, "服务器内部错误")
 
 	// 记忆相关 (11xxx)
 	ErrMemoryNotFound   = New(11001, "记忆不存在")
