@@ -10,7 +10,7 @@ func SetupRoutes(r *gin.Engine) {
 	// TODO: 配置CORS中间件
 	// r.Use(middleware.CORS())
 	// r.Use(middleware.Logger())
-	
+
 	// TODO: 创建handler实例
 	// authHandler := handler.NewAuthHandler(authService)
 	// memoryHandler := handler.NewMemoryHandler(memoryService)
@@ -21,9 +21,9 @@ func SetupRoutes(r *gin.Engine) {
 
 	// API路由组
 	api := r.Group("/api")
-	
+
 	// ==================== 公开路由（无需认证） ====================
-	
+
 	// 1. 微信登录
 	auth := api.Group("/auth")
 	{
@@ -38,7 +38,7 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// ==================== 需要认证的路由 ====================
-	
+
 	authenticated := api.Group("")
 	authenticated.Use(middleware.JWTAuth())
 	{
@@ -70,7 +70,7 @@ func SetupRoutes(r *gin.Engine) {
 		comments := authenticated.Group("/comments")
 		{
 			// comments.DELETE("/:id", commentHandler.DeleteComment)     // 删除评论
-			
+
 			// 评论点赞（统一方法）
 			// comments.POST("/:id/like", likeHandler.ToggleLike) // 切换评论点赞状态
 		}

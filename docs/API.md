@@ -491,11 +491,14 @@
 - **路径参数**:
   - `id` (int64): 记忆 ID
 
+- **请求体**: 无
+
 - **响应**:
 
 ```json
 {
   "code": 200,
+  "message": "success",
   "data": {
     "is_liked": true,
     "like_count": 11
@@ -630,17 +633,24 @@
 - **路径参数**:
   - `id` (int64): 评论 ID
 
+- **请求体**: 无
+
 - **响应**:
 
 ```json
 {
   "code": 200,
+  "message": "success",
   "data": {
     "is_liked": true,
     "like_count": 6
   }
 }
 ```
+
+**字段说明**:
+- `is_liked`: 当前点赞状态（true-已点赞, false-未点赞）
+- `like_count`: 点赞总数
 
 ---
 
