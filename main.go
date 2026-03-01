@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	// TODO: 添加 Swagger 支持时取消注释
+	// swaggerFiles "github.com/swaggo/files"
+	// ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // 应用程序入口
@@ -29,8 +30,8 @@ func main() {
 	// 设置路由
 	r := router.SetupRoutes(db)
 
-	// 集成 Swagger API 文档
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// TODO: 集成 Swagger API 文档（需要先安装依赖）
+	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 创建HTTP服务器
 	srv := &http.Server{Addr: ":8080", Handler: r}
@@ -44,7 +45,7 @@ func main() {
 
 	// 添加启动日志
 	log.Println("Server started on :8080")
-	log.Println("Swagger docs: http://localhost:8080/swagger/index.html")
+	// log.Println("Swagger docs: http://localhost:8080/swagger/index.html")
 
 	// 等待退出信号
 	quit := make(chan os.Signal, 1)
