@@ -1,27 +1,93 @@
 package service
 
+import (
+	"campus-memory/application/dto"
+	"campus-memory/infra/repo"
+	"campus-memory/types/errno"
+	"gorm.io/gorm"
+)
+
 // LikeService 点赞服务
 type LikeService struct {
-	// TODO: 注入依赖（likeRepo, memoryRepo, commentRepo）
+	likeRepo    *repo.LikeRepo
+	memoryRepo  *repo.MemoryRepo
+	commentRepo *repo.CommentRepo
 }
 
 // NewLikeService 创建点赞服务
-func NewLikeService() *LikeService {
-	// TODO: 注入依赖
-	return &LikeService{}
+func NewLikeService(
+	likeRepo *repo.LikeRepo,
+	memoryRepo *repo.MemoryRepo,
+	commentRepo *repo.CommentRepo,
+) *LikeService {
+	return &LikeService{
+		likeRepo:    likeRepo,
+		memoryRepo:  memoryRepo,
+		commentRepo: commentRepo,
+	}
 }
 
 // ToggleLike 切换点赞状态（统一方法，通过targetType区分记忆/评论）
-func (s *LikeService) ToggleLike() error {
-	// TODO: 实现统一的点赞业务逻辑
+func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.ToggleLikeResponse, error) {
 	// 1. 根据targetType检查目标是否存在
-	//    - targetType=1 → 调用 memoryRepo.ExistsByID(targetID)
-	//    - targetType=2 → 调用 commentRepo.ExistsByID(targetID)
-	// 2. 调用 likeRepo.CheckLiked(userID, targetID, targetType)
-	// 3. 翻转逻辑：
-	//    - 如果已点赞 → likeRepo.DeleteLike(userID, targetID, targetType)
-	//    - 如果未点赞 → likeRepo.CreateLike(userID, targetID, targetType)
-	// 4. 调用 likeRepo.GetLikeCount(targetID, targetType)
-	// 5. 返回 ToggleLikeResponse{IsLiked: !原状态, LikeCount: 数量}
-	return nil
+	if targetType == dto.LikeTargetTypeMemory {
+		_, err := s.memoryRepo.GetByID(targetID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, errno.ErrMemoryNotFound
+			}
+			return nil, err
+		}
+	} else if targetType == dto.LikeTargetTypeComment {
+		_, err := s.commentRepo.GetByID(targetID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, errno.ErrCommentNotFound
+			}
+			return nil, err
+		}
+	} else {
+		return nil, errno.ErrBadRequest
+	}
+
+	// 2. 检查是否已点赞
+	isLiked, err := s.likeRepo.CheckLiked(userID, targetID, targetType)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. 翻转逻辑
+	var delta int64
+	if isLiked {
+		// 已点赞 → 取消点赞
+		if err := s.likeRepo.DeleteLike(userID, targetID, targetType); err != nil {
+			return nil, errno.ErrLikeDeleteFail
+		}
+		delta = -1
+	} else {
+		// 未点赞 → 点赞
+		if err := s.likeRepo.CreateLike(userID, targetID, targetType); err != nil {
+			return nil, errno.ErrLikeCreateFail
+		}
+		delta = 1
+	}
+
+	// 4. 更新目标的点赞计数
+	if targetType == dto.LikeTargetTypeMemory {
+		_ = s.memoryRepo.UpdateCounts(targetID, &delta, nil)
+	} else if targetType == dto.LikeTargetTypeComment {
+		_ = s.commentRepo.UpdateLikeCount(targetID, delta)
+	}
+
+	// 5. 获取最新点赞数
+	likeCount, err := s.likeRepo.GetLikeCount(targetID, targetType)
+	if err != nil {
+		return nil, err
+	}
+
+	// 6. 返回响应
+	return &dto.ToggleLikeResponse{
+		IsLiked:   !isLiked,
+		LikeCount: likeCount,
+	}, nil
 }
