@@ -24,11 +24,15 @@ func NewCommentService(
 	commentRepo repo.CommentRepo,
 	userRepo repo.UserRepo,
 	likeRepo repo.LikeRepo,
+	assembler assembler.CommentAssembler,
+	memoryRepo repo.MemoryRepo,
 ) *CommentService {
 	return &CommentService{
 		commentRepo: commentRepo,
 		userRepo:    userRepo,
 		likeRepo:    likeRepo,
+		assembler:   assembler,
+		memoryRepo:  memoryRepo,
 	}
 }
 
@@ -58,7 +62,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *dto.CreateComme
 		}
 
 		// 验证父评论状态
-		if parentComment == nil || parentComment.Status != 1 {
+		if parentComment == nil {
 			return nil, errno.ErrParentCommentNotFound
 		}
 
@@ -88,9 +92,16 @@ func (s *CommentService) CreateComment(ctx context.Context, req *dto.CreateComme
 	}()
 
 	// 获取评论者信息
-	user, _ := s.userRepo.GetUserByID(ctx, userID)
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		// 如果用户不存在，返回适当的错误码；如果是其他错误，返回系统错误
+		if err == gorm.ErrRecordNotFound {
+			return nil, errno.ErrUserNotFound
+		}
+		return nil, err
+	}
 
-	// 获取被回复用户信息（如果是回复）
+	// 获取被回复用户信息
 	var replyToUser *model.UserModel
 	if replyToUserID != nil {
 		replyToUser, _ = s.userRepo.GetUserByID(ctx, *replyToUserID)

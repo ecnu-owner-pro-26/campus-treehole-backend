@@ -14,8 +14,6 @@ type LocationResponse struct {
 	Name        string `json:"name"`
 	CampusID    int64  `json:"campus_id"`
 	Category    string `json:"category"`
-	IsActive    bool   `json:"is_active"`
-	SortOrder   int    `json:"sort_order"`
 	MemoryCount int64  `json:"memory_count"`
 }
 

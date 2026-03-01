@@ -1,7 +1,9 @@
 package service
 
 import (
+	"campus-memory/application/dto"
 	"campus-memory/infra/model"
+	"sort"
 
 	"gorm.io/gorm"
 )
@@ -17,7 +19,7 @@ func NewQuickNavService(db *gorm.DB) *QuickNavService {
 }
 
 // BuildNavTree 构建导航树
-func (s *QuickNavService) BuildNavTree(campusID int64) ([]map[string]interface{}, error) {
+func (s *QuickNavService) BuildNavTree(campusID int64) ([]dto.CampusNavDTO, error) {
 	var locations []model.LocationModel
 	query := s.db.Where("is_active = ?", 1).Order("campus_id, category, sort_order")
 
@@ -39,25 +41,34 @@ func (s *QuickNavService) BuildNavTree(campusID int64) ([]map[string]interface{}
 	}
 
 	// 校区名称映射
-	campusNames := map[int64]string{1: "主校区", 2: "东校区", 3: "西校区"}
+	campusNames := map[int64]string{1: "普陀校区", 2: "闵行校区", 3: "滴水湖校区"}
 
 	// 构建返回结果
-	var result []map[string]interface{}
-	for campusID, categories := range campusMap {
-		var cats []map[string]interface{}
-		for category, locs := range categories {
-			cats = append(cats, map[string]interface{}{
-				"category":  category,
-				"locations": locs,
-				"count":     len(locs),
+	var result []dto.CampusNavDTO
+	for cid, categories := range campusMap {
+		var cats []dto.CategoryDTO
+		for cat, locs := range categories {
+			cats = append(cats, dto.CategoryDTO{
+				Category:  cat,
+				Locations: locs,
+				Count:     len(locs),
 			})
 		}
-		result = append(result, map[string]interface{}{
-			"campus_id":   campusID,
-			"campus_name": campusNames[campusID],
-			"categories":  cats,
+		// 对分类排序
+		sort.Slice(cats, func(i, j int) bool {
+			return cats[i].Category < cats[j].Category
+		})
+		result = append(result, dto.CampusNavDTO{
+			CampusID:   cid,
+			CampusName: campusNames[cid],
+			Categories: cats,
 		})
 	}
+
+	//对校区排序
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CampusID < result[j].CampusID
+	})
 	return result, nil
 }
 
@@ -65,6 +76,14 @@ func (s *QuickNavService) BuildNavTree(campusID int64) ([]map[string]interface{}
 func (s *QuickNavService) SearchLocations(keyword string, campusID int64, page, pageSize int) ([]model.LocationModel, int64, error) {
 	var locations []model.LocationModel
 	var total int64
+
+	// 参数校验
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20
+	}
 
 	query := s.db.Model(&model.LocationModel{}).Where("is_active = ?", 1)
 	if keyword != "" {
@@ -81,6 +100,10 @@ func (s *QuickNavService) SearchLocations(keyword string, campusID int64, page, 
 
 // GetPopularLocations 获取热门地点
 func (s *QuickNavService) GetPopularLocations(campusID int64, limit int) ([]model.LocationModel, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+
 	var locations []model.LocationModel
 	query := s.db.Where("is_active = ?", 1).Order("memory_count desc")
 	if campusID > 0 {
@@ -94,6 +117,14 @@ func (s *QuickNavService) GetPopularLocations(campusID int64, limit int) ([]mode
 func (s *QuickNavService) GetLocationsByCategory(campusID int64, category string, page, pageSize int) ([]model.LocationModel, int64, error) {
 	var locations []model.LocationModel
 	var total int64
+
+	// 参数校验
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20
+	}
 
 	// 查询总数
 	s.db.Model(&model.LocationModel{}).

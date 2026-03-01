@@ -5,21 +5,19 @@ import (
 	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 // QuickNavHandler 快速导航处理器
 type QuickNavHandler struct {
-	quicknavService service.QuickNavService
-	campusService   service.CampusService
+	quicknavService *service.QuickNavService
 }
 
 // NewQuickNavHandler 创建处理器实例
-func NewQuickNavHandler(quicknaveService service.QuickNavService) *QuickNavHandler {
+func NewQuickNavHandler(quicknavService service.QuickNavService) *QuickNavHandler {
 	return &QuickNavHandler{
-		quicknavService: quicknaveService,
+		quicknavService: &quicknavService,
 	}
 }
 
@@ -29,12 +27,6 @@ func (h *QuickNavHandler) GetNavTree(c *gin.Context) {
 	var req dto.GetNavTreeRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		util.ErrorResponse(c, errno.ErrBadRequest.Code, "参数错误: "+err.Error())
-		return
-	}
-
-	// 验证校区ID
-	if req.CampusID <= 0 {
-		util.ErrorResponse(c, errno.ErrBadRequest.Code, "校区ID不能为空")
 		return
 	}
 
@@ -59,16 +51,6 @@ func (h *QuickNavHandler) GetLocationsByCategory(c *gin.Context) {
 	var req dto.GetLocationsByCategoryRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		util.ErrorResponse(c, errno.ErrBadRequest.Code, "参数错误: "+err.Error())
-		return
-	}
-
-	// 参数验证
-	if req.CampusID <= 0 {
-		util.ErrorResponse(c, errno.ErrBadRequest.Code, "校区ID不能为空")
-		return
-	}
-	if req.Category == "" {
-		util.ErrorResponse(c, errno.ErrBadRequest.Code, "类别不能为空")
 		return
 	}
 
@@ -118,15 +100,7 @@ func (h *QuickNavHandler) SearchLocations(c *gin.Context) {
 	}
 
 	// 解析校区ID
-	var campusID int64
-	if req.Campus != "" {
-		var err error
-		campusID, err = strconv.ParseInt(req.Campus, 10, 64)
-		if err != nil {
-			util.ErrorResponse(c, errno.ErrBadRequest.Code, "校区ID格式错误")
-			return
-		}
-	}
+	campusID := req.Campus
 
 	// 调用service层
 	locations, total, err := h.quicknavService.SearchLocations(req.Keyword, campusID, req.Page, req.PageSize)
@@ -150,22 +124,14 @@ func (h *QuickNavHandler) SearchLocations(c *gin.Context) {
 
 // GetPopularLocations 获取热门地点
 func (h *QuickNavHandler) GetPopularLocations(c *gin.Context) {
-	// 解析校区ID
-	campusID, err := strconv.ParseInt(c.Query("campus_id"), 10, 64)
-	if err != nil || campusID <= 0 {
-		util.ErrorResponse(c, errno.ErrBadRequest.Code, "无效的校区ID")
+	var req dto.GetPopularLocationsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		util.ErrorResponse(c, errno.ErrBadRequest.Code, "参数错误: "+err.Error())
 		return
 	}
 
-	// 解析并限制数量
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-
-	if limit <= 0 || limit > 50 {
-		limit = 10
-	}
-
 	// 调用服务层
-	locations, err := h.quicknavService.GetPopularLocations(campusID, limit)
+	locations, err := h.quicknavService.GetPopularLocations(req.CampusID, req.Limit)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)

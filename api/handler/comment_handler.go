@@ -15,6 +15,13 @@ type CommentHandler struct {
 	commentService *service.CommentService
 }
 
+// NewCommentHandler 创建评论处理器实例
+func NewCommentHandler(commentService *service.CommentService) *CommentHandler {
+	return &CommentHandler{
+		commentService: commentService,
+	}
+}
+
 // CreateComment 创建评论
 func (h *CommentHandler) CreateComment(c *gin.Context) {
 	// 从context获取用户ID
@@ -80,17 +87,18 @@ func (h *CommentHandler) ListComments(c *gin.Context) {
 
 // ListReplies 获取评论的回复列表
 func (h *CommentHandler) ListReplies(c *gin.Context) {
-	// 获取父评论ID
-	parentIDStr := c.Param("parent_id")
-	parentID, err := strconv.ParseInt(parentIDStr, 10, 64)
-	if err != nil || parentID <= 0 {
-		util.ErrorResponse(c, errno.ErrBadRequest.Code, errno.ErrBadRequest.Message)
+	var req dto.ListRepliesRequest
+	// 绑定路径参数
+	if err := c.ShouldBindUri(&req); err != nil {
+		util.ErrorResponse(c, errno.ErrBadRequest.Code, "无效的父评论ID")
 		return
 	}
 
-	// 获取分页参数
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	// 绑定查询参数
+	if err := c.ShouldBindQuery(&req); err != nil {
+		util.ErrorResponse(c, errno.ErrBadRequest.Code, "分页参数错误: "+err.Error())
+		return
+	}
 
 	// 获取当前用户ID（可选）
 	var currentUserID *int64
@@ -102,7 +110,7 @@ func (h *CommentHandler) ListReplies(c *gin.Context) {
 
 	// 调用service层
 	ctx := c.Request.Context()
-	resp, err := h.commentService.ListReplies(ctx, parentID, page, pageSize, currentUserID)
+	resp, err := h.commentService.ListReplies(ctx, req.ParentID, req.Page, req.PageSize, currentUserID)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
@@ -144,7 +152,5 @@ func (h *CommentHandler) DeleteComment(c *gin.Context) {
 	}
 
 	// 返回成功响应
-	util.SuccessResponse(c, gin.H{
-		"message": "删除成功",
-	})
+	util.SuccessResponse(c, nil)
 }

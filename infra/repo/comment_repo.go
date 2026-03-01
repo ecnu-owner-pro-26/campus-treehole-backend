@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"campus-memory/types/errno"
 	"context"
 	"errors"
 	"time"
@@ -36,7 +37,7 @@ func (r *CommentRepo) ListByMemoryID(ctx context.Context, memoryID int64, page, 
 
 	// 构建查询
 	query := r.db.WithContext(ctx).Model(&model.CommentModel{}).
-		Where("memory_id = ? AND status = ?", memoryID, 1).
+		Where("memory_id = ? AND status = ? AND deleted_at IS NULL", memoryID, 1).
 		Where("parent_id IS NULL") // 只查询顶级评论
 
 	// 统计总数
@@ -67,7 +68,7 @@ func (r *CommentRepo) ListRepliesByParentID(ctx context.Context, parentID int64,
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&model.CommentModel{}).
-		Where("parent_id = ? AND status = ?", parentID, 1)
+		Where("parent_id = ? AND status = ? AND deleted_at IS NULL", parentID, 1)
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -90,7 +91,6 @@ func (r *CommentRepo) Delete(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":     2,
 			"deleted_at": time.Now(),
 		}).Error
 }
@@ -144,28 +144,59 @@ func (r *CommentRepo) BatchGetReplyCount(ctx context.Context, commentIDs []int64
 
 // IncrementReplyCount 增加评论回复数
 func (r *CommentRepo) IncrementReplyCount(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	result := r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Where("id = ?", id).
-		UpdateColumn("reply_count", gorm.Expr("reply_count + ?", 1)).Error
+		UpdateColumn("reply_count", gorm.Expr("reply_count + ?", 1))
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		// 没有找到对应记录，返回自定义错误
+		return errno.ErrCommentNotFound
+	}
+	return nil
 }
 
 // DecrementReplyCount 减少评论回复数
 func (r *CommentRepo) DecrementReplyCount(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	result := r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Where("id = ? AND reply_count > ?", id, 0).
-		UpdateColumn("reply_count", gorm.Expr("reply_count - ?", 1)).Error
+		UpdateColumn("reply_count", gorm.Expr("reply_count - ?", 1))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		// 可能记录不存在或 reply_count 已为0
+		return errno.ErrCommentNotFound
+	}
+	return nil
 }
 
 // IncrementLikeCount 增加评论点赞数
 func (r *CommentRepo) IncrementLikeCount(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	result := r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Where("id = ?", id).
-		UpdateColumn("like_count", gorm.Expr("like_count + ?", 1)).Error
+		UpdateColumn("like_count", gorm.Expr("like_count + ?", 1))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errno.ErrCommentNotFound
+	}
+	return nil
 }
 
 // DecrementLikeCount 减少评论点赞数
 func (r *CommentRepo) DecrementLikeCount(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	result := r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Where("id = ? AND like_count > ?", id, 0).
-		UpdateColumn("like_count", gorm.Expr("like_count - ?", 1)).Error
+		UpdateColumn("like_count", gorm.Expr("like_count - ?", 1))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errno.ErrCommentNotFound
+	}
+	return nil
 }
