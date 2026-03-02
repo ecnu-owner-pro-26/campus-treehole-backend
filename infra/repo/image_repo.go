@@ -20,6 +20,16 @@ func (r *ImageRepo) Create(image *model.ImageModel) error {
 	return r.db.Create(image).Error
 }
 
+// GetByID 根据ID获取图片
+func (r *ImageRepo) GetByID(id int64) (*model.ImageModel, error) {
+	var image model.ImageModel
+	err := r.db.Where("id = ?", id).First(&image).Error
+	if err != nil {
+		return nil, err
+	}
+	return &image, nil
+}
+
 // GetByMemoryID 根据记忆ID获取图片列表
 func (r *ImageRepo) GetByMemoryID(memoryID int64) ([]*model.ImageModel, error) {
 	var images []*model.ImageModel
@@ -27,6 +37,11 @@ func (r *ImageRepo) GetByMemoryID(memoryID int64) ([]*model.ImageModel, error) {
 		Order("sort_order ASC").
 		Find(&images).Error
 	return images, err
+}
+
+// Delete 删除图片
+func (r *ImageRepo) Delete(id int64) error {
+	return r.db.Delete(&model.ImageModel{}, id).Error
 }
 
 // DeleteByMemoryID 删除记忆的所有图片
