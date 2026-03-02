@@ -31,13 +31,13 @@ type GetLocationsByCategoryRequest struct {
 
 // LocationSearchRequest 地点搜索请求
 type LocationSearchRequest struct {
-	Keyword  string  `form:"keyword" binding:"required,min=1,max=50"` // 搜索关键词
-	Campus   int64   `form:"campus"  binding:"required,min=1"`        // 校区ID，必填且为正整数                    // 可选，限定校区
-	Category string  `form:"category"`                                // 可选，限定类别
-	Lat      float64 `form:"lat"`                                     // 可选，当前位置纬度
-	Lng      float64 `form:"lng"`                                     // 可选，当前位置经度
-	Page     int     `form:"page,default=1"`                          // 页码
-	PageSize int     `form:"page_size,default=20"`                    // 每页数量
+	Keyword  string  `form:"keyword" binding:"required,min=1,max=50"`      // 搜索关键词
+	Campus   int64   `form:"campus"  binding:"required,min=1"`             // 校区ID，必填且为正整数                    // 可选，限定校区
+	Category string  `form:"category"`                                     // 可选，限定类别
+	Lat      float64 `form:"lat"     binding:"omitempty,min=-90,max=90"`   // 可选，当前位置纬度
+	Lng      float64 `form:"lng"     binding:"omitempty,min=-180,max=180"` // 可选，当前位置经度
+	Page     int     `form:"page,default=1"`                               // 页码
+	PageSize int     `form:"page_size,default=20"`                         // 每页数量
 }
 
 // GetPopularLocationsRequest 获取热门地点请求参数

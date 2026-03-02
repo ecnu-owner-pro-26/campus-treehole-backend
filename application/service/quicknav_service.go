@@ -4,6 +4,7 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/model"
 	"sort"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -87,7 +88,11 @@ func (s *QuickNavService) SearchLocations(keyword string, campusID int64, page, 
 
 	query := s.db.Model(&model.LocationModel{}).Where("is_active = ?", 1)
 	if keyword != "" {
-		query = query.Where("name LIKE ?", "%"+keyword+"%")
+		// 转义关键词中的特殊字符
+		escaped := strings.ReplaceAll(keyword, `%`, `\%`)
+		escaped = strings.ReplaceAll(escaped, `_`, `\_`)
+		// 使用 ESCAPE '\' 来转义
+		query = query.Where("name LIKE ? ESCAPE '\\'", "%"+escaped+"%")
 	}
 	if campusID > 0 {
 		query = query.Where("campus_id = ?", campusID)
