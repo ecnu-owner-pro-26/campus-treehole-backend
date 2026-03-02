@@ -13,7 +13,7 @@ type CommentModel struct {
 	ParentID      *int64     `gorm:"column:parent_id;type:integer;index:idx_parent" json:"parent_id,omitempty"` // NULL表示一级评论
 	ReplyToUserID *int64     `gorm:"column:reply_to_user_id;type:integer" json:"reply_to_user_id,omitempty"`
 	LikeCount     int64      `gorm:"column:like_count;type:integer;default:0" json:"like_count"`
-	Status        int8       `gorm:"column:status;type:integer;default:1;not null" json:"status"` // 0-待审核 1-已发布 2-已删除
+	Status        int8       `gorm:"column:status;type:integer;default:1;not null" json:"status"` // 0-待审核 1-已发布
 	CreatedAt     time.Time  `gorm:"column:created_at;type:datetime;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time  `gorm:"column:updated_at;type:datetime;default:CURRENT_TIMESTAMP" json:"updated_at"`
 	DeletedAt     *time.Time `gorm:"column:deleted_at;type:datetime" json:"deleted_at,omitempty"`
