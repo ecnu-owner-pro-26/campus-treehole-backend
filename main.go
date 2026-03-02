@@ -62,8 +62,11 @@ func main() {
 	imageHandler := handler.NewImageHandler(imageService)
 	quicknavHandler := handler.NewQuicknavHandler(quicknavService)
 
-	// 创建 Gin 引擎
-	r := gin.Default()
+	// 创建 Gin 引擎（不使用默认中间件，使用自定义中间件）
+	r := gin.New()
+	
+	// 添加崩溃恢复中间件
+	r.Use(gin.Recovery())
 
 	// 设置路由
 	router.SetupRoutes(r, authHandler, memoryHandler, commentHandler, likeHandler, locationHandler, campusHandler, imageHandler, quicknavHandler)
