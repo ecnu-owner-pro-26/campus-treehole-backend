@@ -55,6 +55,18 @@ var (
 	ErrWechatLoginFail = New(15002, "微信登录失败")
 
 	// 校区地点相关 (16xxx)
-	ErrCampusNotFound   = New(16001, "校区不存在")
-	ErrLocationNotFound = New(16002, "地点不存在")
+	ErrCampusNotFound      = New(16001, "校区不存在")
+	ErrLocationNotFound    = New(16002, "地点不存在")
+	ErrLocationCreateFail  = New(16003, "创建地点失败")
+	ErrLocationUpdateFail  = New(16004, "更新地点失败")
+	ErrLocationDeleteFail  = New(16005, "删除地点失败")
+
+	// 图片相关 (17xxx)
+	ErrImageNotFound    = New(17001, "图片不存在")
+	ErrImageUploadFail  = New(17002, "图片上传失败")
+	ErrImageDeleteFail  = New(17003, "图片删除失败")
+
+	// 记忆状态相关
+	ErrMemoryNotPublic       = New(11005, "记忆未公开")
+	ErrParentCommentNotFound = New(12004, "父评论不存在")
 )

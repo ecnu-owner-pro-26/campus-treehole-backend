@@ -1,5 +1,11 @@
 package assembler
 
+import (
+	"campus-memory/application/dto"
+	"campus-memory/infra/model"
+	"time"
+)
+
 // LocationAssembler 地点数据组装器
 type LocationAssembler struct{}
 
@@ -8,7 +14,45 @@ func NewLocationAssembler() *LocationAssembler {
 	return &LocationAssembler{}
 }
 
-// ToDTO 将地点模型转换为DTO
-func (a *LocationAssembler) ToDTO() {
-	// TODO: 实现模型到DTO的转换
+// ToLocationResponse 将 Model 转换为 DTO Response
+func (a *LocationAssembler) ToLocationResponse(location *model.LocationModel) *dto.LocationResponse {
+	return &dto.LocationResponse{
+		ID:          location.ID,
+		Name:        location.Name,
+		CampusID:    location.CampusID,
+		Category:    location.Category,
+		MemoryCount: location.MemoryCount,
+		CreatedAt:   location.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+// ToLocationModel 将创建请求转换为 Model
+func (a *LocationAssembler) ToLocationModel(req *dto.CreateLocationRequest) *model.LocationModel {
+	return &model.LocationModel{
+		CampusID:    req.CampusID,
+		Name:        req.Name,
+		Category:    req.Category,
+		IsActive:    true,
+		SortOrder:   req.SortOrder,
+		MemoryCount: 0,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+}
+
+// UpdateLocationModel 更新 Model 字段
+func (a *LocationAssembler) UpdateLocationModel(location *model.LocationModel, req *dto.UpdateLocationRequest) {
+	if req.Name != nil {
+		location.Name = *req.Name
+	}
+	if req.Category != nil {
+		location.Category = *req.Category
+	}
+	if req.IsActive != nil {
+		location.IsActive = *req.IsActive
+	}
+	if req.SortOrder != nil {
+		location.SortOrder = *req.SortOrder
+	}
+	location.UpdatedAt = time.Now()
 }
