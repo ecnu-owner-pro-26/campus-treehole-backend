@@ -20,10 +20,10 @@ func (r *MemoryRepo) Create(memory *model.MemoryModel) error {
 	return r.db.Create(memory).Error
 }
 
-// GetByID 根据ID获取记忆
+// GetByID 根据ID获取记忆（只返回已审核通过的记忆）
 func (r *MemoryRepo) GetByID(id int64) (*model.MemoryModel, error) {
 	var memory model.MemoryModel
-	err := r.db.Where("id = ? AND deleted_at IS NULL", id).First(&memory).Error
+	err := r.db.Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&memory).Error
 	if err != nil {
 		return nil, err
 	}
