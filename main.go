@@ -1,8 +1,12 @@
 package main
 
 import (
+	"campus-memory/api/handler"
 	"campus-memory/api/router"
+	"campus-memory/application/assembler"
+	"campus-memory/application/service"
 	"campus-memory/infra"
+	"campus-memory/infra/repo"
 	"context"
 	"errors"
 	"log"
@@ -11,6 +15,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	// TODO: 添加 Swagger 支持时取消注释
 	// swaggerFiles "github.com/swaggo/files"
@@ -27,8 +33,40 @@ func main() {
 	}
 	log.Println("Database initialized successfully")
 
+	// 初始化 Repository 层
+	userRepo := repo.NewUserRepo(db)
+	memoryRepo := repo.NewMemoryRepo(db)
+	locationRepo := repo.NewLocationRepo(db)
+	campusRepo := repo.NewCampusRepo(db)
+	commentRepo := repo.NewCommentRepo(db)
+	likeRepo := repo.NewLikeRepo(db)
+	imageRepo := repo.NewImageRepo(db)
+
+	// 初始化 Service 层
+	authService := service.NewAuthService(userRepo)
+	memoryService := service.NewMemoryService(memoryRepo, userRepo, locationRepo, likeRepo, imageRepo)
+	locationService := service.NewLocationService(locationRepo, campusRepo)
+	campusService := service.NewCampusService(campusRepo, locationRepo)
+	commentService := service.NewCommentService(*commentRepo, *userRepo, *likeRepo, assembler.NewCommentAssembler(), *memoryRepo)
+	likeService := service.NewLikeService(likeRepo, memoryRepo, commentRepo)
+	imageService := service.NewImageService(imageRepo, memoryRepo)
+	quicknavService := service.NewQuicknavService(db)
+
+	// 初始化 Handler 层
+	authHandler := handler.NewAuthHandler(authService)
+	memoryHandler := handler.NewMemoryHandler(memoryService)
+	locationHandler := handler.NewLocationHandler(locationService)
+	campusHandler := handler.NewCampusHandler(campusService)
+	commentHandler := handler.NewCommentHandler(commentService)
+	likeHandler := handler.NewLikeHandler(likeService)
+	imageHandler := handler.NewImageHandler(imageService)
+	quicknavHandler := handler.NewQuicknavHandler(quicknavService)
+
+	// 创建 Gin 引擎
+	r := gin.Default()
+
 	// 设置路由
-	r := router.SetupRoutes(db)
+	router.SetupRoutes(r, authHandler, memoryHandler, commentHandler, likeHandler, locationHandler, campusHandler, imageHandler, quicknavHandler)
 
 	// TODO: 集成 Swagger API 文档（需要先安装依赖）
 	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
