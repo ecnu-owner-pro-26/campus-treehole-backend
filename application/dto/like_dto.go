@@ -8,6 +8,6 @@ const (
 
 // ToggleLikeResponse 切换点赞响应
 type ToggleLikeResponse struct {
-	IsLiked   bool  `json:"is_liked"`   // 当前点赞状态（true-已点赞 false-未点赞）
-	LikeCount int64 `json:"like_count"` // 点赞总数
+	IsLiked   bool  `json:"isLiked"`   // 当前点赞状态（true-已点赞 false-未点赞）
+	LikeCount int64 `json:"likeCount"` // 点赞总数
 }

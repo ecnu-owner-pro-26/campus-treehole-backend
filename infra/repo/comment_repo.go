@@ -98,7 +98,7 @@ func (r *CommentRepo) Delete(ctx context.Context, id int64) error {
 // GetByID 根据ID获取评论
 func (r *CommentRepo) GetByID(ctx context.Context, id int64) (*model.CommentModel, error) {
 	var comment model.CommentModel
-	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL AND status IN (?)", id, 1).First(&comment).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&comment).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil

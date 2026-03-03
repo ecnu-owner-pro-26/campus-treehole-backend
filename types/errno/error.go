@@ -35,14 +35,17 @@ var (
 	ErrMemoryCreateFail = New(11002, "创建记忆失败")
 	ErrMemoryUpdateFail = New(11003, "更新记忆失败")
 	ErrMemoryDeleteFail = New(11004, "删除记忆失败")
+	ErrMemoryNotPublic  = New(11005, "记忆不公开")
 
 	// 评论相关 (12xxx)
-	ErrCommentNotFound   = New(12001, "评论不存在")
-	ErrCommentCreateFail = New(12002, "创建评论失败")
-	ErrCommentDeleteFail = New(12003, "删除评论失败")
+	ErrCommentNotFound        = New(12001, "评论不存在")
+	ErrCommentCreateFail      = New(12002, "创建评论失败")
+	ErrCommentDeleteFail      = New(12003, "删除评论失败")
+	ErrParentCommentNotFound  = New(12004, "父评论不存在")
 
-	// 文件相关 (13xxx)
-	ErrFileUploadFail = New(13001, "文件上传失败")
+	// 内容审核相关 (13xxx)
+	ErrFileUploadFail   = New(13001, "文件上传失败")
+	ErrContentViolation = New(13002, "内容违规")
 
 	// 点赞相关 (14xxx)
 	ErrAlreadyLiked   = New(14001, "已经点赞过了")
@@ -65,8 +68,4 @@ var (
 	ErrImageNotFound    = New(17001, "图片不存在")
 	ErrImageUploadFail  = New(17002, "图片上传失败")
 	ErrImageDeleteFail  = New(17003, "图片删除失败")
-
-	// 记忆状态相关
-	ErrMemoryNotPublic       = New(11005, "记忆未公开")
-	ErrParentCommentNotFound = New(12004, "父评论不存在")
 )
