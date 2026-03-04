@@ -21,6 +21,8 @@ func (a *LocationAssembler) ToLocationResponse(location *model.LocationModel) *d
 		Name:        location.Name,
 		CampusID:    location.CampusID,
 		Category:    location.Category,
+		Latitude:    location.Latitude,
+		Longitude:   location.Longitude,
 		MemoryCount: location.MemoryCount,
 		CreatedAt:   location.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
@@ -32,6 +34,8 @@ func (a *LocationAssembler) ToLocationModel(req *dto.CreateLocationRequest) *mod
 		CampusID:    req.CampusID,
 		Name:        req.Name,
 		Category:    req.Category,
+		Latitude:    req.Latitude,
+		Longitude:   req.Longitude,
 		IsActive:    true,
 		SortOrder:   req.SortOrder,
 		MemoryCount: 0,
@@ -47,6 +51,12 @@ func (a *LocationAssembler) UpdateLocationModel(location *model.LocationModel, r
 	}
 	if req.Category != nil {
 		location.Category = *req.Category
+	}
+	if req.Latitude != nil {
+		location.Latitude = *req.Latitude
+	}
+	if req.Longitude != nil {
+		location.Longitude = *req.Longitude
 	}
 	if req.IsActive != nil {
 		location.IsActive = *req.IsActive

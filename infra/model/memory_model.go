@@ -10,7 +10,9 @@ type MemoryModel struct {
 	Title        string     `gorm:"column:title;type:text;not null" json:"title"`
 	Content      string     `gorm:"column:content;type:text" json:"content"`
 	LocationName string     `gorm:"column:location_name;type:text" json:"location_name"`
-	LocationID   *int64     `gorm:"column:location_id;type:integer;index:idx_location" json:"location_id"` // 关联location表
+	LocationID   *int64     `gorm:"column:location_id;type:integer;index:idx_location" json:"location_id"` // 关联location表（可选）
+	Latitude     float64    `gorm:"column:latitude;type:real;not null" json:"latitude"`                    // 纬度（必填，用于地图显示）
+	Longitude    float64    `gorm:"column:longitude;type:real;not null" json:"longitude"`                  // 经度（必填，用于地图显示）
 	IsPublic     bool       `gorm:"column:is_public;type:integer;default:1;not null" json:"is_public"`
 	ViewCount    int64      `gorm:"column:view_count;type:integer;default:0" json:"view_count"`
 	LikeCount    int64      `gorm:"column:like_count;type:integer;default:0" json:"like_count"`

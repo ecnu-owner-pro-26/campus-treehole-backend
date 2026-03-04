@@ -1,165 +1,173 @@
-# 校园树洞后端 - 微信小程序版
+# 校园记忆 - 后端服务
 
-基于微信小程序的校园记忆分享平台后端服务
+基于微信小程序的校园记忆分享平台后端
 
-## 项目特点
+## 功能特性
 
-- **纯微信登录**：无需注册，使用微信一键登录
-- **校区地点导航**：支持多校区、多地点的记忆分享
-- **记忆分享**：支持文字、图片、音频的记忆发布
-- **互动功能**：点赞、评论系统
+- 微信一键登录,无需注册
+- 多校区、多地点记忆分享
+- 图片上传与管理
+- 点赞、评论互动系统
+- 快速导航与地点搜索
 
 ## 技术栈
 
-- **语言**: Go 1.21+
-- **框架**: Gin
-- **数据库**: PostgreSQL / MySQL
-- **缓存**: Redis
-- **认证**: JWT
-- **文档**: Swagger
+- Go 1.24 + Gin
+- SQLite (GORM)
+- JWT 认证
+- Redis (可选)
 
 ## 项目结构
 
 ```
-.
-├── api/                    # API层
-│   ├── handler/           # 请求处理器
-│   ├── router/            # 路由配置
-│   └── token/             # Token管理
-├── application/           # 应用层
-│   ├── assembler/        # 数据组装器
-│   ├── dto/              # 数据传输对象
-│   └── service/          # 业务逻辑服务
-├── infra/                # 基础设施层
-│   ├── cache/            # 缓存
-│   ├── model/            # 数据模型
-│   ├── repo/             # 数据仓储
-│   └── util/             # 工具函数
-├── middleware/           # 中间件
-├── types/                # 类型定义
-├── utils/                # 通用工具
-└── docs/                 # API文档
-
-```
-
-## 认证流程
-
-### 微信登录流程
-
-1. 小程序调用 `wx.login()` 获取 code
-2. 前端携带 code 调用 `/api/auth/wechat/login`
-3. 后端使用 code 换取 OpenID
-4. 查询用户是否存在，不存在则创建
-5. 生成 JWT token 返回给前端
-6. 前端后续请求携带 token 访问受保护接口
-
-### 用户数据模型
-
-```go
-type UserModel struct {
-    ID              int64     // 用户ID
-    OpenID          string    // 微信OpenID（唯一标识）
-    UnionID         string    // 微信UnionID（可选）
-    Nickname        string    // 用户昵称
-    Avatar          string    // 用户头像
-    DefaultCampusID *int64    // 默认校区
-    Status          int8      // 状态（0-禁用 1-正常）
-    Role            int8      // 角色（0-普通用户 1-管理员）
-}
-```
-
-## 环境配置
-
-创建 `.env` 文件：
-
-```env
-# 微信小程序配置
-WECHAT_APPID=your_appid
-WECHAT_SECRET=your_secret
-
-# JWT配置
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRE_HOURS=168
-
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password
-DB_NAME=campus_treehole
-
-# Redis配置
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
+├── api/              # API 层 (handler, router)
+├── application/      # 应用层 (service, dto, assembler)
+├── infra/            # 基础设施层 (model, repo, cache)
+├── middleware/       # 中间件 (auth, cors, logger)
+├── utils/            # 工具函数 (jwt, wechat)
+├── types/            # 类型定义
+├── docs/             # API 文档
+└── data/             # SQLite 数据库文件
 ```
 
 ## 快速开始
 
-### 开发环境
+### 环境要求
+
+- Go 1.24+
+- 微信小程序 AppID 和 Secret
+
+### 配置
+
+创建 `.env` 文件:
+
+```env
+# 微信小程序
+WECHAT_APPID=your_appid
+WECHAT_SECRET=your_secret
+
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE_HOURS=168
+```
+
+### 运行
 
 ```bash
 # 安装依赖
 go mod download
 
 # 初始化数据库
-make init-db
+sqlite3 data/campus_memory.db < scripts/init_db.sql
+sqlite3 data/campus_memory.db < scripts/init_campus_data.sql
 
-# 运行开发服务器
+# 启动服务
+go run main.go
+# 或使用 make
 make dev
 ```
 
-### Docker部署
+服务运行在 `http://localhost:8080`
+
+### Docker 部署
 
 ```bash
-# 构建并启动
 docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
 ```
 
-## API文档
+## API 文档
 
-启动服务后访问：
-- Swagger UI: http://localhost:8080/swagger/index.html
-- API文档: [docs/API.md](docs/API.md)
+详细 API 文档: [docs/API.md](docs/API.md)
 
-## 核心功能模块
+### 核心接口
 
-### 1. 认证模块
-- 微信登录
-- 用户信息管理
-- JWT认证中间件
+**认证**
+- `POST /api/auth/wechat/login` - 微信登录
+- `GET /api/auth/profile` - 获取个人信息
+- `PUT /api/auth/profile` - 更新个人信息
 
-### 2. 记忆模块
-- 创建/编辑/删除记忆
-- 记忆列表查询
-- 记忆点赞
+**校区地点**
+- `GET /api/campuses` - 获取校区列表
+- `GET /api/campuses/:id/locations` - 获取校区地点
+- `GET /api/quicknav/tree` - 获取导航树
 
-### 3. 评论模块
-- 发表评论
-- 评论点赞
-- 评论管理
+**记忆**
+- `POST /api/memories` - 创建记忆
+- `GET /api/memories` - 获取记忆列表
+- `GET /api/memories/:id` - 获取记忆详情
+- `PUT /api/memories/:id` - 更新记忆
+- `DELETE /api/memories/:id` - 删除记忆
 
-### 4. 校区地点模块
-- 校区列表
-- 地点列表
-- 地点记忆查询
+**互动**
+- `POST /api/comments` - 发表评论
+- `POST /api/memories/:id/like` - 点赞记忆
+- `POST /api/comments/:id/like` - 点赞评论
 
-## 开发规范
+**图片**
+- `POST /api/images/upload` - 上传图片
+- `GET /api/images/memory/:id` - 获取记忆图片
 
-### 分层架构
+## 数据模型
 
-- **API层**: 处理HTTP请求，参数验证
-- **应用层**: 业务逻辑编排，DTO转换
-- **基础设施层**: 数据持久化，外部服务调用
+### 核心实体
 
-### 代码风格
+- **User**: 用户 (OpenID, 昵称, 头像, 默认校区)
+- **Campus**: 校区 (名称, 状态)
+- **Location**: 地点 (名称, 类别, 所属校区, 记忆数)
+- **Memory**: 记忆 (标题, 内容, 地点, 创建者, 点赞数, 评论数)
+- **Comment**: 评论 (内容, 记忆, 创建者, 父评论, 点赞数)
+- **Like**: 点赞 (用户, 目标类型, 目标ID)
+- **Image**: 图片 (URL, 记忆, 大小)
 
-- 遵循Go官方代码规范
-- 使用有意义的变量和函数命名
-- 添加必要的注释和文档
+### 关系
+
+```
+Campus (1) ─── (N) Location
+Location (1) ─── (N) Memory
+User (1) ─── (N) Memory
+Memory (1) ─── (N) Comment
+Memory (1) ─── (N) Image
+User (1) ─── (N) Like
+```
+
+## 认证流程
+
+1. 小程序调用 `wx.login()` 获取 code
+2. 前端发送 code 到 `/api/auth/wechat/login`
+3. 后端用 code 换取 OpenID
+4. 生成 JWT token 返回
+5. 后续请求携带 token: `Authorization: Bearer {token}`
+
+## 开发
+
+### 项目架构
+
+采用 DDD 分层架构:
+- **API 层**: HTTP 请求处理、参数验证
+- **应用层**: 业务逻辑编排、DTO 转换
+- **基础设施层**: 数据持久化、外部服务
+
+### 代码规范
+
+- 遵循 Go 官方代码规范
+- 使用有意义的命名
+- 添加必要的注释
+
+### 常用命令
+
+```bash
+# 开发
+make dev
+
+# 构建
+make build
+
+# 测试
+make test
+
+# 清理
+make clean
+```
 
 ## License
 
