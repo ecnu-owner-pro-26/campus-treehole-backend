@@ -44,6 +44,8 @@ func (a *MemoryAssembler) ToMemoryResponse(
 		Content:      memory.Content,
 		LocationName: memory.LocationName,
 		LocationID:   memory.LocationID,
+		Latitude:     memory.Latitude,
+		Longitude:    memory.Longitude,
 		Creator: dto.UserSimpleInfo{
 			ID:       creator.ID,
 			Nickname: creator.Nickname,
@@ -69,6 +71,8 @@ func (a *MemoryAssembler) ToMemoryModel(req *dto.CreateMemoryRequest, creatorID 
 		Content:      req.Content,
 		LocationID:   req.LocationID,
 		LocationName: locationName,
+		Latitude:     req.Latitude,
+		Longitude:    req.Longitude,
 		IsPublic:     req.IsPublic,
 		Tags:         string(tagsJSON),
 		Status:       1, // 已发布
@@ -91,6 +95,12 @@ func (a *MemoryAssembler) UpdateMemoryModel(memory *model.MemoryModel, req *dto.
 	}
 	if req.LocationID != nil {
 		memory.LocationID = req.LocationID
+	}
+	if req.Latitude != nil {
+		memory.Latitude = *req.Latitude
+	}
+	if req.Longitude != nil {
+		memory.Longitude = *req.Longitude
 	}
 	if req.IsPublic != nil {
 		memory.IsPublic = *req.IsPublic

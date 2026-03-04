@@ -4,7 +4,9 @@ package dto
 type CreateMemoryRequest struct {
 	Title      string   `json:"title" binding:"required,max=100"`
 	Content    string   `json:"content" binding:"max=5000"`
-	LocationID *int64   `json:"locationId" binding:"required"`
+	LocationID *int64   `json:"locationId"`
+	Latitude   float64  `json:"latitude" binding:"required,min=-90,max=90"`
+	Longitude  float64  `json:"longitude" binding:"required,min=-180,max=180"`
 	IsPublic   bool     `json:"isPublic"`
 	Tags       []string `json:"tags"`
 	ImageURLs  []string `json:"imageUrls"`
@@ -15,6 +17,8 @@ type UpdateMemoryRequest struct {
 	Title      *string  `json:"title" binding:"omitempty,max=100"`
 	Content    *string  `json:"content" binding:"omitempty,max=5000"`
 	LocationID *int64   `json:"locationId"`
+	Latitude   *float64 `json:"latitude" binding:"omitempty,min=-90,max=90"`
+	Longitude  *float64 `json:"longitude" binding:"omitempty,min=-180,max=180"`
 	IsPublic   *bool    `json:"isPublic"`
 	Tags       []string `json:"tags"`
 	ImageURLs  []string `json:"imageUrls"`
@@ -27,6 +31,8 @@ type MemoryResponse struct {
 	Content      string         `json:"content"`
 	LocationName string         `json:"locationName"`
 	LocationID   *int64         `json:"locationId"`
+	Latitude     float64        `json:"latitude"`
+	Longitude    float64        `json:"longitude"`
 	Creator      UserSimpleInfo `json:"creator"`
 	LikeCount    int64          `json:"likeCount"`
 	CommentCount int64          `json:"commentCount"`

@@ -63,7 +63,7 @@ func (h *MemoryHandler) GetMemory(c *gin.Context) {
 		return
 	}
 
-	// 2. 获取当前用户ID(可选)
+	// 2. 获取当前用户ID
 	var currentUserID *int64
 	if userID, exists := c.Get("user_id"); exists {
 		uid := userID.(int64)
@@ -94,7 +94,7 @@ func (h *MemoryHandler) ListMemories(c *gin.Context) {
 		return
 	}
 
-	// 2. 获取当前用户ID(可选)
+	// 2. 获取当前用户ID
 	var currentUserID *int64
 	if userID, exists := c.Get("user_id"); exists {
 		uid := userID.(int64)
@@ -180,4 +180,3 @@ func (h *MemoryHandler) DeleteMemory(c *gin.Context) {
 	// 4. 返回成功响应
 	util.SuccessResponse(c, nil)
 }
-
