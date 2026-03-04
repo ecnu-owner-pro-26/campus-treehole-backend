@@ -107,7 +107,7 @@ func (h *QuickNavHandler) SearchLocations(c *gin.Context) {
 	}
 
 	// 解析校区ID
-	campusID := req.Campus
+	campusID := req.CampusID
 
 	// 调用service层
 	locations, total, err := h.quicknavService.SearchLocations(req.Keyword, campusID, req.Page, req.PageSize)

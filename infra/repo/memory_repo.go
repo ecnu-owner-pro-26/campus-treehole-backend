@@ -25,7 +25,7 @@ func (r *MemoryRepo) Create(ctx context.Context, memory *model.MemoryModel) erro
 // GetByID 根据ID获取记忆
 func (r *MemoryRepo) GetByID(ctx context.Context, id int64) (*model.MemoryModel, error) {
 	var memory model.MemoryModel
-	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&memory).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&memory).Error
 	if err != nil {
 		return nil, err
 	}

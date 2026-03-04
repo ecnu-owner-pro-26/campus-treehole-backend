@@ -22,13 +22,14 @@ func (a *CommentAssembler) ToDomain(req *dto.CreateCommentRequest, userID int64)
 
 	now := time.Now()
 	return &model.CommentModel{
-		MemoryID:  req.MemoryID,
-		UserID:    userID,
-		Content:   req.Content,
-		ParentID:  req.ParentID,
-		LikeCount: 0,
-		Status:    0,
-		CreatedAt: now,
+		MemoryID:      req.MemoryID,
+		UserID:        userID,
+		Content:       req.Content,
+		ParentID:      req.ParentID,
+		ReplyToUserID: req.ReplyToUserID,
+		LikeCount:     0,
+		Status:        0,
+		CreatedAt:     now,
 	}
 }
 
@@ -46,7 +47,7 @@ func (a *CommentAssembler) ToCommentResponse(
 		MemoryID: comment.MemoryID,
 		Content:  comment.Content,
 		ParentID: comment.ParentID,
-		User: dto.UserSimpleInfo{
+		Creator: dto.UserSimpleInfo{
 			ID:       user.ID,
 			Nickname: user.Nickname,
 			Avatar:   user.Avatar,

@@ -12,9 +12,10 @@ INSERT INTO campuses (name, is_active, sort_order, created_at, updated_at) VALUE
 ('滴水湖校区', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- 插入地点数据
--- 普陀校区地点
-INSERT INTO locations (campus_id, name, category, is_active, sort_order, memory_count, created_at, updated_at) VALUES
-(1, '图书馆', 'academic', 1, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- 普陀校区地点（华东师范大学普陀校区，中山北路校区）
+-- 中心坐标约: 31.2304, 121.4245
+INSERT INTO locations (campus_id, name, category, latitude, longitude, is_active, sort_order, memory_count, created_at, updated_at) VALUES
+(1, '图书馆', 'academic', 31.2304, 121.4245, 1, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (1, '三馆', 'academic', 1, 2, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (1, '博学楼', 'academic', 1, 3, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (1, '干训楼', 'academic', 1, 4, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

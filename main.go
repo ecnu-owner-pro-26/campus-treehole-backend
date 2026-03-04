@@ -28,7 +28,7 @@ func main() {
 	log.Println("Database initialized successfully")
 
 	// 设置路由
-	r := router.SetupRoutes(db)
+	r := router.SetupRoutes(db.DB)
 
 	// TODO: 集成 Swagger API 文档（需要先安装依赖）
 	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

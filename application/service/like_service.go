@@ -41,6 +41,7 @@ func (s *LikeService) ToggleLike(ctx context.Context, userID, targetID int64, ta
 			return nil, err
 		}
 	} else if targetType == dto.LikeTargetTypeComment {
+		ctx := context.Background()
 		_, err := s.commentRepo.GetByID(ctx, targetID)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -78,7 +79,12 @@ func (s *LikeService) ToggleLike(ctx context.Context, userID, targetID int64, ta
 	if targetType == dto.LikeTargetTypeMemory {
 		_ = s.memoryRepo.UpdateCounts(ctx, targetID, &delta, nil)
 	} else if targetType == dto.LikeTargetTypeComment {
-		_ = s.commentRepo.UpdateLikeCount(ctx, targetID, &delta)
+		ctx := context.Background()
+		if delta > 0 {
+			_ = s.commentRepo.IncrementLikeCount(ctx, targetID)
+		} else {
+			_ = s.commentRepo.DecrementLikeCount(ctx, targetID)
+		}
 	}
 
 	// 5. 获取最新点赞数
