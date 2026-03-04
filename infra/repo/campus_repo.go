@@ -2,6 +2,8 @@ package repo
 
 import (
 	"campus-memory/infra/model"
+	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -16,18 +18,18 @@ func NewCampusRepo(db *gorm.DB) *CampusRepo {
 }
 
 // GetAll 获取所有校区
-func (r *CampusRepo) GetAll() ([]model.CampusModel, error) {
+func (r *CampusRepo) GetAll(ctx context.Context) ([]model.CampusModel, error) {
 	var campuses []model.CampusModel
-	err := r.db.Where("is_active = ?", true).
+	err := r.db.WithContext(ctx).Where("is_active = ?", true).
 		Order("sort_order ASC, id ASC").
 		Find(&campuses).Error
 	return campuses, err
 }
 
 // GetByID 根据ID获取校区
-func (r *CampusRepo) GetByID(id int64) (*model.CampusModel, error) {
+func (r *CampusRepo) GetByID(ctx context.Context, id int64) (*model.CampusModel, error) {
 	var campus model.CampusModel
-	err := r.db.Where("id = ?", id).First(&campus).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&campus).Error
 	if err != nil {
 		return nil, err
 	}
@@ -35,16 +37,16 @@ func (r *CampusRepo) GetByID(id int64) (*model.CampusModel, error) {
 }
 
 // Create 创建校区
-func (r *CampusRepo) Create(campus *model.CampusModel) error {
-	return r.db.Create(campus).Error
+func (r *CampusRepo) Create(ctx context.Context, campus *model.CampusModel) error {
+	return r.db.WithContext(ctx).Create(campus).Error
 }
 
 // Update 更新校区
-func (r *CampusRepo) Update(campus *model.CampusModel) error {
-	return r.db.Save(campus).Error
+func (r *CampusRepo) Update(ctx context.Context, campus *model.CampusModel) error {
+	return r.db.WithContext(ctx).Save(campus).Error
 }
 
 // Delete 删除校区
-func (r *CampusRepo) Delete(id int64) error {
-	return r.db.Delete(&model.CampusModel{}, id).Error
+func (r *CampusRepo) Delete(ctx context.Context, id int64) error {
+	return r.db.WithContext(ctx).Delete(&model.CampusModel{}, id).Error
 }

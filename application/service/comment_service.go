@@ -7,25 +7,26 @@ import (
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
 	"context"
+	"log"
 
 	"gorm.io/gorm"
 )
 
 // CommentService 留言服务
 type CommentService struct {
-	commentRepo repo.CommentRepo
-	assembler   assembler.CommentAssembler
-	userRepo    repo.UserRepo
-	likeRepo    repo.LikeRepo
-	memoryRepo  repo.MemoryRepo
+	commentRepo *repo.CommentRepo
+	userRepo    *repo.UserRepo
+	likeRepo    *repo.LikeRepo
+	assembler   *assembler.CommentAssembler
+	memoryRepo  *repo.MemoryRepo
 }
 
 func NewCommentService(
-	commentRepo repo.CommentRepo,
-	userRepo repo.UserRepo,
-	likeRepo repo.LikeRepo,
-	assembler assembler.CommentAssembler,
-	memoryRepo repo.MemoryRepo,
+	commentRepo *repo.CommentRepo,
+	userRepo *repo.UserRepo,
+	likeRepo *repo.LikeRepo,
+	assembler *assembler.CommentAssembler,
+	memoryRepo *repo.MemoryRepo,
 ) *CommentService {
 	return &CommentService{
 		commentRepo: commentRepo,
@@ -39,7 +40,7 @@ func NewCommentService(
 // CreateComment 创建评论
 func (s *CommentService) CreateComment(ctx context.Context, req *dto.CreateCommentRequest, userID int64) (*dto.CommentResponse, error) {
 	// 验证记忆是否存在且公开
-	memory, err := s.memoryRepo.GetByID(req.MemoryID)
+	memory, err := s.memoryRepo.GetByID(ctx, req.MemoryID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrMemoryNotFound
@@ -88,7 +89,7 @@ func (s *CommentService) CreateComment(ctx context.Context, req *dto.CreateComme
 	// 异步更新记忆的评论计数
 	commentCount := int64(1)
 	go func() {
-		_ = s.memoryRepo.UpdateCounts(req.MemoryID, nil, &commentCount)
+		_ = s.memoryRepo.UpdateCounts(ctx, req.MemoryID, nil, &commentCount)
 	}()
 
 	// 获取评论者信息
@@ -134,33 +135,86 @@ func (s *CommentService) ListComments(ctx context.Context, req *dto.CommentListR
 	if err != nil {
 		return nil, err
 	}
-	// 组装响应列表
+	if len(comments) == 0 {
+		return &dto.CommentListResponse{
+			Comments: []*dto.CommentResponse{},
+			Total:    0,
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		}, nil
+	}
+	// 收集所有需要查询的用户 ID（评论作者 + 被回复用户）
+	userIDSet := make(map[int64]struct{})
+	for _, c := range comments {
+		userIDSet[c.UserID] = struct{}{}
+		if c.ReplyToUserID != nil {
+			userIDSet[*c.ReplyToUserID] = struct{}{}
+		}
+	}
+	userIDs := make([]int64, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+
+	// 批量查询用户信息
+	users, err := s.userRepo.ListByIDs(ctx, userIDs)
+	if err != nil {
+		// 记录错误，但继续执行（可能部分用户缺失，后面会跳过）
+		log.Printf("failed to batch get users: %v", err)
+	}
+	userMap := make(map[int64]*model.UserModel, len(users))
+	for _, u := range users {
+		userMap[u.ID] = u
+	}
+
+	// 批量查询点赞状态（如果当前用户已登录）
+	likedMap := make(map[int64]bool)
+	if currentUserID != nil {
+		commentIDs := make([]int64, len(comments))
+		for i, c := range comments {
+			commentIDs[i] = c.ID
+		}
+		likedMap, err = s.likeRepo.BatchCheckLiked(ctx, *currentUserID, commentIDs, 2) // 假设 2 代表评论类型
+		if err != nil {
+			log.Printf("failed to batch check liked: %v", err)
+			// 不中断流程，后续视为未点赞
+		}
+	}
+
+	// 批量查询回复数
+	commentIDs := make([]int64, len(comments))
+	for i, c := range comments {
+		commentIDs[i] = c.ID
+	}
+	replyCountMap, err := s.commentRepo.BatchGetReplyCount(ctx, commentIDs)
+	if err != nil {
+		log.Printf("failed to batch get reply count: %v", err)
+		// 不中断，后续回复数默认为 0
+	}
+	// 组装响应
 	commentItems := make([]*dto.CommentResponse, 0, len(comments))
 	for _, comment := range comments {
-		// 获取评论用户
-		user, _ := s.userRepo.GetUserByID(ctx, comment.UserID)
-		if user == nil {
+		// 获取用户（必须存在，否则跳过该评论）
+		user, ok := userMap[comment.UserID]
+		if !ok {
+			log.Printf("user %d not found, skip comment %d", comment.UserID, comment.ID)
 			continue
 		}
 
-		// 获取回复目标用户（如果是回复）
+		// 获取被回复用户（可能为 nil）
 		var replyToUser *model.UserModel
 		if comment.ReplyToUserID != nil {
-			replyToUser, _ = s.userRepo.GetUserByID(ctx, *comment.ReplyToUserID)
+			replyToUser = userMap[*comment.ReplyToUserID] // 可能 nil，但可以接受
 		}
 
-		// 检查是否已点赞
-		isLiked := false
-		if currentUserID != nil {
-			isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, comment.ID, 2)
-		}
+		// 点赞状态
+		isLiked := likedMap[comment.ID] // 如果未查询到，默认为 false
 
-		// 获取回复数量
-		replyCount, _ := s.commentRepo.GetReplyCount(ctx, comment.ID)
+		// 回复数
+		replyCount := replyCountMap[comment.ID] // 如果未查询到，默认为 0
 
 		commentItems = append(commentItems, s.assembler.ToCommentResponse(comment, user, replyToUser, isLiked, replyCount))
 	}
-
 	return &dto.CommentListResponse{
 		Comments: commentItems,
 		Total:    total,
@@ -197,29 +251,75 @@ func (s *CommentService) ListReplies(ctx context.Context, parentID int64, page, 
 		return nil, err
 	}
 
-	// 组装响应列表
+	if len(replies) == 0 {
+		return &dto.CommentListResponse{
+			Comments: []*dto.CommentResponse{},
+			Total:    0,
+			Page:     page,
+			PageSize: pageSize,
+		}, nil
+	}
+	// 收集所有需要查询的用户 ID
+	userIDSet := make(map[int64]struct{})
+	for _, r := range replies {
+		userIDSet[r.UserID] = struct{}{}
+		if r.ReplyToUserID != nil {
+			userIDSet[*r.ReplyToUserID] = struct{}{}
+		}
+	}
+	userIDs := make([]int64, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+
+	// 批量查询用户
+	users, err := s.userRepo.ListByIDs(ctx, userIDs)
+	if err != nil {
+		log.Printf("failed to batch get users: %v", err)
+	}
+	userMap := make(map[int64]*model.UserModel, len(users))
+	for _, u := range users {
+		userMap[u.ID] = u
+	}
+
+	// 批量查询点赞状态
+	likedMap := make(map[int64]bool)
+	if currentUserID != nil {
+		replyIDs := make([]int64, len(replies))
+		for i, r := range replies {
+			replyIDs[i] = r.ID
+		}
+		likedMap, err = s.likeRepo.BatchCheckLiked(ctx, *currentUserID, replyIDs, 2)
+		if err != nil {
+			log.Printf("failed to batch check liked: %v", err)
+		}
+	}
+
+	// 批量查询回复数（回复的回复）
+	replyIDs := make([]int64, len(replies))
+	for i, r := range replies {
+		replyIDs[i] = r.ID
+	}
+	replyCountMap, err := s.commentRepo.BatchGetReplyCount(ctx, replyIDs)
+	if err != nil {
+		log.Printf("failed to batch get reply count: %v", err)
+	}
+	// 组装响应
 	replyItems := make([]*dto.CommentResponse, 0, len(replies))
 	for _, reply := range replies {
-		// 获取评论用户
-		user, err := s.userRepo.GetUserByID(ctx, reply.UserID)
-		if err != nil || user == nil {
+		user, ok := userMap[reply.UserID]
+		if !ok {
+			log.Printf("user %d not found, skip reply %d", reply.UserID, reply.ID)
 			continue
 		}
 
-		// 获取回复目标用户（如果是回复）
 		var replyToUser *model.UserModel
 		if reply.ReplyToUserID != nil {
-			replyToUser, _ = s.userRepo.GetUserByID(ctx, *reply.ReplyToUserID)
+			replyToUser = userMap[*reply.ReplyToUserID]
 		}
 
-		// 检查是否已点赞
-		isLiked := false
-		if currentUserID != nil {
-			isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, reply.ID, 2)
-		}
-
-		// 获取回复数量（回复的回复）
-		replyCount, _ := s.commentRepo.GetReplyCount(ctx, reply.ID)
+		isLiked := likedMap[reply.ID]
+		replyCount := replyCountMap[reply.ID]
 
 		replyItems = append(replyItems, s.assembler.ToCommentResponse(reply, user, replyToUser, isLiked, replyCount))
 	}
@@ -257,15 +357,9 @@ func (s *CommentService) DeleteComment(ctx context.Context, id int64, userID int
 
 	// 异步更新记忆的评论计数
 	go func() {
-
-		// 先获取当前记忆
-		memory, err := s.memoryRepo.GetByID(comment.MemoryID)
-		if err != nil || memory == nil {
-			return
-		}
-		// 计算新计数、变更计数
-		newCount := memory.CommentCount - 1
-		_ = s.memoryRepo.UpdateCounts(comment.MemoryID, nil, &newCount)
+		delta := int64(-1)
+		// 、变更计数
+		_ = s.memoryRepo.UpdateCounts(ctx, comment.MemoryID, nil, &delta)
 	}()
 
 	// 如果是回复，更新父评论的回复数

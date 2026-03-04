@@ -5,6 +5,7 @@ import (
 	"campus-memory/infra/model"
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
+	"context"
 
 	"gorm.io/gorm"
 )
@@ -27,9 +28,9 @@ func NewImageService(
 }
 
 // UploadImage 上传图片（创建图片记录）
-func (s *ImageService) UploadImage(req *dto.UploadImageRequest, url string, size int64) (*dto.UploadImageResponse, error) {
+func (s *ImageService) UploadImage(ctx context.Context, req *dto.UploadImageRequest, url string, size int64) (*dto.UploadImageResponse, error) {
 	// 1. 验证记忆是否存在
-	memory, err := s.memoryRepo.GetByID(req.MemoryID)
+	memory, err := s.memoryRepo.GetByID(ctx, req.MemoryID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrMemoryNotFound
@@ -38,7 +39,7 @@ func (s *ImageService) UploadImage(req *dto.UploadImageRequest, url string, size
 	}
 
 	// 2. 获取当前记忆的图片数量，用于设置排序
-	images, _ := s.imageRepo.GetByMemoryID(memory.ID)
+	images, _ := s.imageRepo.GetByMemoryID(ctx, memory.ID)
 	sortOrder := len(images)
 
 	// 3. 创建图片记录
@@ -49,7 +50,7 @@ func (s *ImageService) UploadImage(req *dto.UploadImageRequest, url string, size
 		SortOrder: sortOrder,
 	}
 
-	if err := s.imageRepo.Create(image); err != nil {
+	if err := s.imageRepo.Create(ctx, image); err != nil {
 		return nil, errno.ErrImageUploadFail
 	}
 
@@ -61,9 +62,9 @@ func (s *ImageService) UploadImage(req *dto.UploadImageRequest, url string, size
 }
 
 // DeleteImage 删除图片
-func (s *ImageService) DeleteImage(id int64, userID int64) error {
+func (s *ImageService) DeleteImage(ctx context.Context, id int64, userID int64) error {
 	// 1. 获取图片信息
-	image, err := s.imageRepo.GetByID(id)
+	image, err := s.imageRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errno.ErrImageNotFound
@@ -72,7 +73,7 @@ func (s *ImageService) DeleteImage(id int64, userID int64) error {
 	}
 
 	// 2. 获取关联的记忆，验证权限
-	memory, err := s.memoryRepo.GetByID(image.MemoryID)
+	memory, err := s.memoryRepo.GetByID(ctx, image.MemoryID)
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func (s *ImageService) DeleteImage(id int64, userID int64) error {
 	}
 
 	// 4. 删除图片记录
-	if err := s.imageRepo.Delete(id); err != nil {
+	if err := s.imageRepo.Delete(ctx, id); err != nil {
 		return errno.ErrImageDeleteFail
 	}
 
@@ -91,8 +92,8 @@ func (s *ImageService) DeleteImage(id int64, userID int64) error {
 }
 
 // GetImagesByMemoryID 获取记忆的所有图片
-func (s *ImageService) GetImagesByMemoryID(memoryID int64) ([]dto.ImageInfo, error) {
-	images, err := s.imageRepo.GetByMemoryID(memoryID)
+func (s *ImageService) GetImagesByMemoryID(ctx context.Context, memoryID int64) ([]dto.ImageInfo, error) {
+	images, err := s.imageRepo.GetByMemoryID(ctx, memoryID)
 	if err != nil {
 		return nil, err
 	}

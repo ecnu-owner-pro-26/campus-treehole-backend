@@ -2,21 +2,29 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"context"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+// CommentServiceInterface 定义评论服务需要实现的方法
+type CommentServiceInterface interface {
+	CreateComment(ctx context.Context, req *dto.CreateCommentRequest, userID int64) (*dto.CommentResponse, error)
+	ListComments(ctx context.Context, req *dto.CommentListRequest, currentUserID *int64) (*dto.CommentListResponse, error)
+	ListReplies(ctx context.Context, parentID int64, page, pageSize int, currentUserID *int64) (*dto.CommentListResponse, error)
+	DeleteComment(ctx context.Context, id int64, userID int64) error
+}
+
 // CommentHandler 评论处理器
 type CommentHandler struct {
-	commentService *service.CommentService
+	commentService CommentServiceInterface
 }
 
 // NewCommentHandler 创建评论处理器实例
-func NewCommentHandler(commentService *service.CommentService) *CommentHandler {
+func NewCommentHandler(commentService CommentServiceInterface) *CommentHandler {
 	return &CommentHandler{
 		commentService: commentService,
 	}

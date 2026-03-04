@@ -52,16 +52,3 @@ type MemoryListResponse struct {
 	Page     int              `json:"page"`
 	PageSize int              `json:"page_size"`
 }
-
-// UserSimpleInfo 用户简单信息
-type UserSimpleInfo struct {
-	ID       int64  `json:"id"`
-	Nickname string `json:"nickname"`
-	Avatar   string `json:"avatar"`
-}
-
-// ImageInfo 图片信息
-type ImageInfo struct {
-	ID  int64  `json:"id"`
-	URL string `json:"url"`
-}

@@ -24,7 +24,7 @@ func NewAuthService(userRepo *repo.UserRepo) *AuthService {
 }
 
 // WechatLogin 微信登录业务逻辑
-func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginResponse, error) {
+func (s *AuthService) WechatLogin(ctx context.Context, req *dto.WechatLoginRequest) (*dto.LoginResponse, error) {
 	// 1. 调用微信API获取OpenID
 	session, err := utils.GetWechatOpenID(req.Code)
 	if err != nil {
@@ -32,7 +32,7 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 	}
 
 	// 2. 查询用户是否存在
-	user, err := s.userRepo.GetUserByOpenID(session.OpenID)
+	user, err := s.userRepo.GetUserByOpenID(ctx, session.OpenID)
 
 	if err != nil {
 		// 用户不存在
@@ -52,7 +52,7 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 				user.Nickname = "微信用户"
 			}
 
-			if err := s.userRepo.CreateUser(user); err != nil {
+			if err := s.userRepo.CreateUser(ctx, user); err != nil {
 				return nil, err
 			}
 		} else {

@@ -2,22 +2,29 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
+	"campus-memory/infra/model"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
 
 	"github.com/gin-gonic/gin"
 )
 
+type QuickNavServiceInterface interface {
+	BuildNavTree(campusID int64) ([]dto.CampusNavDTO, error)
+	GetLocationsByCategory(campusID int64, category string, page, pageSize int) ([]model.LocationModel, int64, error)
+	SearchLocations(keyword string, campusID int64, page, pageSize int) ([]model.LocationModel, int64, error)
+	GetPopularLocations(campusID int64, limit int) ([]model.LocationModel, error)
+}
+
 // QuickNavHandler 快速导航处理器
 type QuickNavHandler struct {
-	quicknavService *service.QuickNavService
+	quicknavService QuickNavServiceInterface
 }
 
 // NewQuickNavHandler 创建处理器实例
-func NewQuickNavHandler(quicknavService service.QuickNavService) *QuickNavHandler {
+func NewQuickNavHandler(quicknavService QuickNavServiceInterface) *QuickNavHandler {
 	return &QuickNavHandler{
-		quicknavService: &quicknavService,
+		quicknavService: quicknavService,
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"campus-memory/types/errno"
 	"context"
 	"errors"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -90,9 +89,7 @@ func (r *CommentRepo) ListRepliesByParentID(ctx context.Context, parentID int64,
 func (r *CommentRepo) Delete(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Where("id = ?", id).
-		Updates(map[string]interface{}{
-			"deleted_at": time.Now(),
-		}).Error
+		Update("deleted_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
 }
 
 // GetByID 根据ID获取评论
@@ -119,6 +116,10 @@ func (r *CommentRepo) GetReplyCount(ctx context.Context, commentID int64) (int64
 
 // BatchGetReplyCount 批量获取多个评论的回复数量
 func (r *CommentRepo) BatchGetReplyCount(ctx context.Context, commentIDs []int64) (map[int64]int64, error) {
+	if len(commentIDs) == 0 {
+		return make(map[int64]int64), nil
+	}
+
 	type Result struct {
 		ParentID int64
 		Count    int64
@@ -145,7 +146,7 @@ func (r *CommentRepo) BatchGetReplyCount(ctx context.Context, commentIDs []int64
 // IncrementReplyCount 增加评论回复数
 func (r *CommentRepo) IncrementReplyCount(ctx context.Context, id int64) error {
 	result := r.db.WithContext(ctx).Model(&model.CommentModel{}).
-		Where("id = ?", id).
+		Where("id = ? AND status = ? AND deleted_at IS NULL", id, 1).
 		UpdateColumn("reply_count", gorm.Expr("reply_count + ?", 1))
 
 	if result.Error != nil {
@@ -199,4 +200,13 @@ func (r *CommentRepo) DecrementLikeCount(ctx context.Context, id int64) error {
 		return errno.ErrCommentNotFound
 	}
 	return nil
+}
+
+// UpdateLikeCount 更新统计数据（增量更新）
+func (r *CommentRepo) UpdateLikeCount(ctx context.Context, id int64, delta *int64) error {
+	updates := make(map[string]interface{})
+	if delta != nil {
+		updates["like_count"] = gorm.Expr("like_count + ?", *delta)
+	}
+	return r.db.WithContext(ctx).Model(&model.CommentModel{}).Where("id = ?", id).Updates(updates).Error
 }

@@ -41,8 +41,8 @@ type UpdateProfileRequest struct {
 	DefaultCampusID *int64  `json:"default_campus_id" binding:"omitempty,min=1"` // 默认校区ID（必须大于0）
 }
 
-// UserSimpleDTO 用户简化信息（用于记忆、评论的创建者信息）
-type UserSimpleDTO struct {
+// UserSimpleInfo 用户简化信息（用于记忆、评论的创建者信息）
+type UserSimpleInfo struct {
 	ID       int64  `json:"id"`       // 用户ID
 	Nickname string `json:"nickname"` // 用户昵称
 	Avatar   string `json:"avatar"`   // 用户头像URL

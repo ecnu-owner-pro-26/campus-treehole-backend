@@ -5,6 +5,7 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
+	"context"
 
 	"gorm.io/gorm"
 )
@@ -29,9 +30,9 @@ func NewCampusService(
 }
 
 // ListCampuses 获取所有校区列表
-func (s *CampusService) ListCampuses() (*dto.CampusListResponse, error) {
+func (s *CampusService) ListCampuses(ctx context.Context) (*dto.CampusListResponse, error) {
 	// 1. 查询所有校区
-	campuses, err := s.campusRepo.GetAll()
+	campuses, err := s.campusRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +50,9 @@ func (s *CampusService) ListCampuses() (*dto.CampusListResponse, error) {
 }
 
 // GetCampus 获取校区详情
-func (s *CampusService) GetCampus(id int64) (*dto.CampusResponse, error) {
+func (s *CampusService) GetCampus(ctx context.Context, id int64) (*dto.CampusResponse, error) {
 	// 1. 获取校区
-	campus, err := s.campusRepo.GetByID(id)
+	campus, err := s.campusRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrCampusNotFound
@@ -64,9 +65,9 @@ func (s *CampusService) GetCampus(id int64) (*dto.CampusResponse, error) {
 }
 
 // GetCampusWithLocations 获取校区及其地点列表
-func (s *CampusService) GetCampusWithLocations(campusID int64) (*dto.CampusLocationsResponse, error) {
+func (s *CampusService) GetCampusWithLocations(ctx context.Context, campusID int64) (*dto.CampusLocationsResponse, error) {
 	// 1. 获取校区
-	campus, err := s.campusRepo.GetByID(campusID)
+	campus, err := s.campusRepo.GetByID(ctx, campusID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrCampusNotFound
@@ -75,7 +76,7 @@ func (s *CampusService) GetCampusWithLocations(campusID int64) (*dto.CampusLocat
 	}
 
 	// 2. 获取该校区的所有地点
-	locations, err := s.locationRepo.GetByCampusID(campusID)
+	locations, err := s.locationRepo.GetByCampusID(ctx, campusID)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,8 @@ package repo
 
 import (
 	"campus-memory/infra/model"
+	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -16,14 +18,14 @@ func NewMemoryRepo(db *gorm.DB) *MemoryRepo {
 }
 
 // Create 创建记忆记录
-func (r *MemoryRepo) Create(memory *model.MemoryModel) error {
-	return r.db.Create(memory).Error
+func (r *MemoryRepo) Create(ctx context.Context, memory *model.MemoryModel) error {
+	return r.db.WithContext(ctx).Create(memory).Error
 }
 
 // GetByID 根据ID获取记忆
-func (r *MemoryRepo) GetByID(id int64) (*model.MemoryModel, error) {
+func (r *MemoryRepo) GetByID(ctx context.Context, id int64) (*model.MemoryModel, error) {
 	var memory model.MemoryModel
-	err := r.db.Where("id = ? AND deleted_at IS NULL", id).First(&memory).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&memory).Error
 	if err != nil {
 		return nil, err
 	}
@@ -31,11 +33,11 @@ func (r *MemoryRepo) GetByID(id int64) (*model.MemoryModel, error) {
 }
 
 // List 获取记忆列表(分页)
-func (r *MemoryRepo) List(locationID *int64, page, pageSize int, sortBy string) ([]*model.MemoryModel, int64, error) {
+func (r *MemoryRepo) List(ctx context.Context, locationID *int64, page, pageSize int, sortBy string) ([]*model.MemoryModel, int64, error) {
 	var memories []*model.MemoryModel
 	var total int64
 
-	query := r.db.Model(&model.MemoryModel{}).Where("deleted_at IS NULL AND status = 1")
+	query := r.db.WithContext(ctx).Model(&model.MemoryModel{}).Where("deleted_at IS NULL AND status = 1")
 
 	// 按地点筛选
 	if locationID != nil {
@@ -64,19 +66,19 @@ func (r *MemoryRepo) List(locationID *int64, page, pageSize int, sortBy string) 
 }
 
 // Update 更新记忆记录
-func (r *MemoryRepo) Update(memory *model.MemoryModel) error {
-	return r.db.Save(memory).Error
+func (r *MemoryRepo) Update(ctx context.Context, memory *model.MemoryModel) error {
+	return r.db.WithContext(ctx).Save(memory).Error
 }
 
 // Delete 软删除记忆记录
-func (r *MemoryRepo) Delete(id int64) error {
-	return r.db.Model(&model.MemoryModel{}).Where("id = ?", id).Update("deleted_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
+func (r *MemoryRepo) Delete(ctx context.Context, id int64) error {
+	return r.db.WithContext(ctx).Model(&model.MemoryModel{}).Where("id = ?", id).Update("deleted_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
 }
 
 // GetByLocationID 根据地点ID获取记忆列表
-func (r *MemoryRepo) GetByLocationID(locationID int64, limit int) ([]*model.MemoryModel, error) {
+func (r *MemoryRepo) GetByLocationID(ctx context.Context, locationID int64, limit int) ([]*model.MemoryModel, error) {
 	var memories []*model.MemoryModel
-	err := r.db.Where("location_id = ? AND deleted_at IS NULL AND status = 1", locationID).
+	err := r.db.WithContext(ctx).Where("location_id = ? AND deleted_at IS NULL AND status = 1", locationID).
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&memories).Error
@@ -84,13 +86,13 @@ func (r *MemoryRepo) GetByLocationID(locationID int64, limit int) ([]*model.Memo
 }
 
 // IncrementViewCount 增加浏览次数
-func (r *MemoryRepo) IncrementViewCount(id int64) error {
-	return r.db.Model(&model.MemoryModel{}).Where("id = ?", id).
+func (r *MemoryRepo) IncrementViewCount(ctx context.Context, id int64) error {
+	return r.db.WithContext(ctx).Model(&model.MemoryModel{}).Where("id = ?", id).
 		Update("view_count", gorm.Expr("view_count + 1")).Error
 }
 
 // UpdateCounts 更新统计数据（增量更新）
-func (r *MemoryRepo) UpdateCounts(id int64, likeCount, commentCount *int64) error {
+func (r *MemoryRepo) UpdateCounts(ctx context.Context, id int64, likeCount, commentCount *int64) error {
 	updates := make(map[string]interface{})
 	if likeCount != nil {
 		updates["like_count"] = gorm.Expr("like_count + ?", *likeCount)
@@ -98,5 +100,5 @@ func (r *MemoryRepo) UpdateCounts(id int64, likeCount, commentCount *int64) erro
 	if commentCount != nil {
 		updates["comment_count"] = gorm.Expr("comment_count + ?", *commentCount)
 	}
-	return r.db.Model(&model.MemoryModel{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.WithContext(ctx).Model(&model.MemoryModel{}).Where("id = ?", id).Updates(updates).Error
 }
