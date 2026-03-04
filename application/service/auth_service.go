@@ -4,6 +4,7 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/model"
 	"campus-memory/infra/repo"
+	"campus-memory/types/errno"
 	"campus-memory/utils"
 	"context"
 	"errors"
@@ -112,7 +113,7 @@ func (s *AuthService) GetUserProfile(ctx context.Context, userID int64) (*dto.Us
 	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("用户不存在")
+			return nil, errno.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func (s *AuthService) UpdateUserProfile(ctx context.Context, userID int64, req *
 	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("用户不存在")
+			return errno.ErrUserNotFound
 		}
 		return err
 	}

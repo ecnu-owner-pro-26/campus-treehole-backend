@@ -6,6 +6,7 @@ import (
 	"campus-memory/infra/model"
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
+	"context"
 	"gorm.io/gorm"
 )
 
@@ -70,7 +71,7 @@ func (s *MemoryService) CreateMemory(req *dto.CreateMemoryRequest, creatorID int
 	}
 
 	// 5. 获取创建者信息
-	creator, _ := s.userRepo.GetByID(creatorID)
+	creator, _ := s.userRepo.GetUserByID(context.Background(), creatorID)
 
 	// 6. 获取图片列表
 	images, _ := s.imageRepo.GetByMemoryID(memory.ID)
@@ -94,7 +95,7 @@ func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryRe
 	_ = s.memoryRepo.IncrementViewCount(id)
 
 	// 3. 获取创建者信息
-	creator, err := s.userRepo.GetByID(memory.CreatorID)
+	creator, err := s.userRepo.GetUserByID(context.Background(), memory.CreatorID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +136,7 @@ func (s *MemoryService) ListMemories(req *dto.MemoryListRequest, currentUserID *
 	memoryResponses := make([]dto.MemoryResponse, 0, len(memories))
 	for _, memory := range memories {
 		// 获取创建者
-		creator, _ := s.userRepo.GetByID(memory.CreatorID)
+		creator, _ := s.userRepo.GetUserByID(context.Background(), memory.CreatorID)
 		if creator == nil {
 			continue
 		}

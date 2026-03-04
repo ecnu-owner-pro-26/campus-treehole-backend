@@ -4,6 +4,7 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
+	"context"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +40,8 @@ func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.
 			return nil, err
 		}
 	} else if targetType == dto.LikeTargetTypeComment {
-		_, err := s.commentRepo.GetByID(targetID)
+		ctx := context.Background()
+		_, err := s.commentRepo.GetByID(ctx, targetID)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, errno.ErrCommentNotFound
@@ -76,7 +78,12 @@ func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.
 	if targetType == dto.LikeTargetTypeMemory {
 		_ = s.memoryRepo.UpdateCounts(targetID, &delta, nil)
 	} else if targetType == dto.LikeTargetTypeComment {
-		_ = s.commentRepo.UpdateLikeCount(targetID, delta)
+		ctx := context.Background()
+		if delta > 0 {
+			_ = s.commentRepo.IncrementLikeCount(ctx, targetID)
+		} else {
+			_ = s.commentRepo.DecrementLikeCount(ctx, targetID)
+		}
 	}
 
 	// 5. 获取最新点赞数

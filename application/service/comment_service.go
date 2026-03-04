@@ -13,19 +13,19 @@ import (
 
 // CommentService 留言服务
 type CommentService struct {
-	commentRepo repo.CommentRepo
-	assembler   assembler.CommentAssembler
-	userRepo    repo.UserRepo
-	likeRepo    repo.LikeRepo
-	memoryRepo  repo.MemoryRepo
+	commentRepo *repo.CommentRepo
+	assembler   *assembler.CommentAssembler
+	userRepo    *repo.UserRepo
+	likeRepo    *repo.LikeRepo
+	memoryRepo  *repo.MemoryRepo
 }
 
 func NewCommentService(
-	commentRepo repo.CommentRepo,
-	userRepo repo.UserRepo,
-	likeRepo repo.LikeRepo,
-	assembler assembler.CommentAssembler,
-	memoryRepo repo.MemoryRepo,
+	commentRepo *repo.CommentRepo,
+	userRepo *repo.UserRepo,
+	likeRepo *repo.LikeRepo,
+	assembler *assembler.CommentAssembler,
+	memoryRepo *repo.MemoryRepo,
 ) *CommentService {
 	return &CommentService{
 		commentRepo: commentRepo,
@@ -257,15 +257,9 @@ func (s *CommentService) DeleteComment(ctx context.Context, id int64, userID int
 
 	// 异步更新记忆的评论计数
 	go func() {
-
-		// 先获取当前记忆
-		memory, err := s.memoryRepo.GetByID(comment.MemoryID)
-		if err != nil || memory == nil {
-			return
-		}
-		// 计算新计数、变更计数
-		newCount := memory.CommentCount - 1
-		_ = s.memoryRepo.UpdateCounts(comment.MemoryID, nil, &newCount)
+		// 传递增量 -1
+		delta := int64(-1)
+		_ = s.memoryRepo.UpdateCounts(comment.MemoryID, nil, &delta)
 	}()
 
 	// 如果是回复，更新父评论的回复数
