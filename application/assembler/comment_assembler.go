@@ -28,7 +28,7 @@ func (a *CommentAssembler) ToDomain(req *dto.CreateCommentRequest, userID int64)
 		ParentID:      req.ParentID,
 		ReplyToUserID: req.ReplyToUserID,
 		LikeCount:     0,
-		Status:        0,
+		Status:        1, // 暂时设置为已发布状态，跳过审核
 		CreatedAt:     now,
 	}
 }
