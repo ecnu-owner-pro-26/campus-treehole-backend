@@ -35,8 +35,12 @@ func (r *CommentRepo) ListByMemoryID(ctx context.Context, memoryID int64, page, 
 	var total int64
 
 	// 构建查询
+	// 暂时注释掉审核状态检查，允许所有状态的评论被查询
+	// query := r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	// 	Where("memory_id = ? AND status = ? AND deleted_at IS NULL", memoryID, 1).
+	// 	Where("parent_id IS NULL") // 只查询顶级评论
 	query := r.db.WithContext(ctx).Model(&model.CommentModel{}).
-		Where("memory_id = ? AND status = ? AND deleted_at IS NULL", memoryID, 1).
+		Where("memory_id = ? AND deleted_at IS NULL", memoryID).
 		Where("parent_id IS NULL") // 只查询顶级评论
 
 	// 统计总数
@@ -66,8 +70,11 @@ func (r *CommentRepo) ListRepliesByParentID(ctx context.Context, parentID int64,
 	var replies []*model.CommentModel
 	var total int64
 
+	// 暂时注释掉审核状态检查，允许所有状态的评论被查询
+	// query := r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	// 	Where("parent_id = ? AND status = ? AND deleted_at IS NULL", parentID, 1)
 	query := r.db.WithContext(ctx).Model(&model.CommentModel{}).
-		Where("parent_id = ? AND status = ? AND deleted_at IS NULL", parentID, 1)
+		Where("parent_id = ? AND deleted_at IS NULL", parentID)
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -95,7 +102,9 @@ func (r *CommentRepo) Delete(ctx context.Context, id int64) error {
 // GetByID 根据ID获取评论
 func (r *CommentRepo) GetByID(ctx context.Context, id int64) (*model.CommentModel, error) {
 	var comment model.CommentModel
-	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&comment).Error
+	// 暂时注释掉审核状态检查，允许所有状态的评论被查询
+	// err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&comment).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&comment).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -108,8 +117,12 @@ func (r *CommentRepo) GetByID(ctx context.Context, id int64) (*model.CommentMode
 // GetReplyCount 获取评论的回复数量
 func (r *CommentRepo) GetReplyCount(ctx context.Context, commentID int64) (int64, error) {
 	var count int64
+	// 暂时注释掉审核状态检查，允许所有状态的评论被统计
+	// err := r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	// 	Where("parent_id = ? AND status = ?", commentID, 1).
+	// 	Count(&count).Error
 	err := r.db.WithContext(ctx).Model(&model.CommentModel{}).
-		Where("parent_id = ? AND status = ?", commentID, 1).
+		Where("parent_id = ?", commentID).
 		Count(&count).Error
 	return count, err
 }
@@ -126,9 +139,15 @@ func (r *CommentRepo) BatchGetReplyCount(ctx context.Context, commentIDs []int64
 	}
 
 	var results []Result
+	// 暂时注释掉审核状态检查，允许所有状态的评论被统计
+	// err := r.db.WithContext(ctx).Model(&model.CommentModel{}).
+	// 	Select("parent_id, COUNT(*) as count").
+	// 	Where("parent_id IN (?) AND status = ?", commentIDs, 1).
+	// 	Group("parent_id").
+	// 	Scan(&results).Error
 	err := r.db.WithContext(ctx).Model(&model.CommentModel{}).
 		Select("parent_id, COUNT(*) as count").
-		Where("parent_id IN (?) AND status = ?", commentIDs, 1).
+		Where("parent_id IN (?)", commentIDs).
 		Group("parent_id").
 		Scan(&results).Error
 

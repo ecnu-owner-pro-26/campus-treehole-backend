@@ -25,7 +25,9 @@ func (r *MemoryRepo) Create(ctx context.Context, memory *model.MemoryModel) erro
 // GetByID 根据ID获取记忆
 func (r *MemoryRepo) GetByID(ctx context.Context, id int64) (*model.MemoryModel, error) {
 	var memory model.MemoryModel
-	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&memory).Error
+	// 暂时注释掉审核状态检查，允许所有状态的记忆被查询
+	// err := r.db.Where("id = ? AND deleted_at IS NULL AND status = ?", id, 1).First(&memory).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&memory).Error
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +39,9 @@ func (r *MemoryRepo) List(ctx context.Context, locationID *int64, page, pageSize
 	var memories []*model.MemoryModel
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.MemoryModel{}).Where("deleted_at IS NULL AND status = 1")
+	// 暂时注释掉审核状态检查，允许所有状态的记忆被查询
+	// query := r.db.Model(&model.MemoryModel{}).Where("deleted_at IS NULL AND status = 1")
+	query := r.db.WithContext(ctx).Model(&model.MemoryModel{}).Where("deleted_at IS NULL")
 
 	// 按地点筛选
 	if locationID != nil {
@@ -78,7 +82,9 @@ func (r *MemoryRepo) Delete(ctx context.Context, id int64) error {
 // GetByLocationID 根据地点ID获取记忆列表
 func (r *MemoryRepo) GetByLocationID(ctx context.Context, locationID int64, limit int) ([]*model.MemoryModel, error) {
 	var memories []*model.MemoryModel
-	err := r.db.WithContext(ctx).Where("location_id = ? AND deleted_at IS NULL AND status = 1", locationID).
+	// 暂时注释掉审核状态检查，允许所有状态的记忆被查询
+	// err := r.db.Where("location_id = ? AND deleted_at IS NULL AND status = 1", locationID).
+	err := r.db.WithContext(ctx).Where("location_id = ? AND deleted_at IS NULL", locationID).
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&memories).Error

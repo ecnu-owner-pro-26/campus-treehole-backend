@@ -100,7 +100,6 @@ campus-memory/
 │   ├── assembler/         # 数据组装器（Model ↔ DTO 转换）
 │   │   ├── campus_assembler.go
 │   │   ├── comment_assembler.go
-│   │   ├── like_assembler.go
 │   │   ├── location_assembler.go
 │   │   ├── memory_assembler.go
 │   │   └── user_assembler.go
@@ -419,7 +418,7 @@ git push origin feature/your-feature-name
 ### 2. 开发命令
 
 ```bash
-# 开发模式运行（热重载，推荐）
+# 开发模式运行
 make dev
 
 # 普通模式运行
@@ -490,102 +489,6 @@ git commit -m "refactor(repo): optimize database query performance"
    ↓
 10. 合并到主分支
 ```
-
-## 🧪 API 测试
-
-### 1. 使用 HTTP 文件测试（推荐）
-
-项目提供了完整的 API 测试文件：`scripts/test_api.http`
-
-**在 VS Code 中使用**：
-1. 安装 **REST Client** 插件
-2. 打开 `scripts/test_api.http`
-3. 点击请求上方的 "Send Request" 按钮
-
-**测试流程**：
-```http
-### 1. 微信登录
-POST http://localhost:8080/api/auth/wechat/login
-Content-Type: application/json
-
-{
-  "code": "test-code",
-  "nickname": "测试用户",
-  "avatar": "https://example.com/avatar.jpg"
-}
-
-### 2. 获取校区列表
-GET http://localhost:8080/api/campuses
-
-### 3. 创建记忆（需要 token）
-POST http://localhost:8080/api/memories
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "title": "图书馆的美好时光",
-  "content": "今天在图书馆学习，感觉很充实",
-  "locationId": 1,
-  "isPublic": true,
-  "tags": ["学习", "图书馆"]
-}
-```
-
-### 2. 使用 cURL 测试
-
-```bash
-# 获取校区列表
-curl http://localhost:8080/api/campuses
-
-# 微信登录
-curl -X POST http://localhost:8080/api/auth/wechat/login \
-  -H "Content-Type: application/json" \
-  -d '{"code":"test-code","nickname":"测试用户"}'
-
-# 创建记忆（需要替换 token）
-curl -X POST http://localhost:8080/api/memories \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"测试记忆","content":"测试内容","locationId":1}'
-```
-
-### 3. 使用 Postman 测试
-
-1. 导入 API 文档（docs/API.md）
-2. 配置环境变量：
-   - `base_url`: http://localhost:8080
-   - `token`: 登录后获取的 JWT token
-3. 按照文档测试各个接口
-
-### 4. 自动化测试
-
-```bash
-# 运行单元测试
-make test
-
-# 运行特定包的测试
-go test ./application/service/...
-
-# 运行集成测试
-go test -tags=integration ./...
-
-# 生成测试覆盖率报告
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-
-# 查看覆盖率
-go test -cover ./...
-```
-
-### 5. 测试数据
-
-数据库初始化后会自动创建测试数据：
-
-- **校区**: 普陀校区、临港校区
-- **地点**: 图书馆、教学楼、食堂等
-- **用户**: 测试用户（通过微信登录创建）
-
-可以在 `scripts/init_campus_data.sql` 中查看和修改测试数据。
 
 ## 📝 代码规范
 
