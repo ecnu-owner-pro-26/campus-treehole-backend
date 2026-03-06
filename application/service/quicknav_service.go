@@ -4,7 +4,6 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/model"
 	"sort"
-	"strings"
 
 	"gorm.io/gorm"
 )
@@ -71,37 +70,6 @@ func (s *QuickNavService) BuildNavTree(campusID int64) ([]dto.CampusNavDTO, erro
 		return result[i].CampusID < result[j].CampusID
 	})
 	return result, nil
-}
-
-// SearchLocations 搜索地点
-func (s *QuickNavService) SearchLocations(keyword string, campusID int64, page, pageSize int) ([]model.LocationModel, int64, error) {
-	var locations []model.LocationModel
-	var total int64
-
-	// 参数校验
-	if page < 1 {
-		page = 1
-	}
-	if pageSize <= 0 || pageSize > 100 {
-		pageSize = 20
-	}
-
-	query := s.db.Model(&model.LocationModel{}).Where("is_active = ?", 1)
-	if keyword != "" {
-		// 转义
-		escaped := strings.ReplaceAll(keyword, `\`, `\\`)
-		escaped = strings.ReplaceAll(escaped, `%`, `\%`)
-		escaped = strings.ReplaceAll(escaped, `_`, `\_`)
-		// 使用 ESCAPE '\' 来转义
-		query = query.Where("name LIKE ? ESCAPE '\\'", "%"+escaped+"%")
-	}
-	if campusID > 0 {
-		query = query.Where("campus_id = ?", campusID)
-	}
-
-	query.Count(&total)
-	err := query.Order("memory_count desc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&locations).Error
-	return locations, total, err
 }
 
 // GetPopularLocations 获取热门地点

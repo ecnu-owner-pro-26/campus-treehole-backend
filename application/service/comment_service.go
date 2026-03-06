@@ -87,9 +87,10 @@ func (s *CommentService) CreateComment(ctx context.Context, req *dto.CreateComme
 	}
 
 	// 异步更新记忆的评论计数
+	bgCtx := context.Background()
 	commentCount := int64(1)
 	go func() {
-		_ = s.memoryRepo.UpdateCounts(ctx, req.MemoryID, nil, &commentCount)
+		_ = s.memoryRepo.UpdateCounts(bgCtx, req.MemoryID, nil, &commentCount)
 	}()
 
 	// 获取评论者信息

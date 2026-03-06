@@ -5,6 +5,7 @@ import (
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
 	"context"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -95,13 +96,15 @@ func (h *CommentHandler) ListComments(c *gin.Context) {
 
 // ListReplies 获取评论的回复列表
 func (h *CommentHandler) ListReplies(c *gin.Context) {
-	var req dto.ListRepliesRequest
+	var uri dto.ParentUri
 	// 绑定路径参数
-	if err := c.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindUri(&uri); err != nil {
+		log.Printf("ShouldBindUri 错误: %v", err)
 		util.ErrorResponse(c, errno.ErrBadRequest.Code, "无效的父评论ID")
 		return
 	}
 
+	var req dto.ListRepliesRequest
 	// 绑定查询参数
 	if err := c.ShouldBindQuery(&req); err != nil {
 		util.ErrorResponse(c, errno.ErrBadRequest.Code, "分页参数错误: "+err.Error())
@@ -118,7 +121,7 @@ func (h *CommentHandler) ListReplies(c *gin.Context) {
 
 	// 调用service层
 	ctx := c.Request.Context()
-	resp, err := h.commentService.ListReplies(ctx, req.ParentID, req.Page, req.PageSize, currentUserID)
+	resp, err := h.commentService.ListReplies(ctx, uri.ParentID, req.Page, req.PageSize, currentUserID)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)

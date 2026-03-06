@@ -16,7 +16,7 @@ type LocationResponse struct {
 type LocationListRequest struct {
 	CampusID *int64 `form:"campus_id"`
 	Category string `form:"category"`
-	Page     int    `form:"page" binding:"min=1"`
+	Page     int    `form:"page"      binding:"min=1"`
 	PageSize int    `form:"page_size" binding:"min=1,max=100"`
 }
 

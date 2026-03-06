@@ -40,10 +40,3 @@ type UpdateProfileRequest struct {
 	Avatar          *string `json:"avatar" binding:"omitempty,url"`            // 用户头像URL（必须是有效URL）
 	DefaultCampusID *int64  `json:"defaultCampusId" binding:"omitempty,min=1"` // 默认校区ID（必须大于0）
 }
-
-// UserSimpleInfo 用户简化信息（用于记忆、评论的创建者信息）
-type UserSimpleInfo struct {
-	ID       int64  `json:"id"`       // 用户ID
-	Nickname string `json:"nickname"` // 用户昵称
-	Avatar   string `json:"avatar"`   // 用户头像URL
-}
