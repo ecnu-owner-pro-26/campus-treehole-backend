@@ -203,18 +203,21 @@
 {
   "code": 200,
   "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "name": "普陀校区",
-      "created_at": "2024-01-01T00:00:00Z"
-    },
-    {
-      "id": 2,
-      "name": "临港校区",
-      "created_at": "2024-01-01T00:00:00Z"
-    }
-  ]
+  "data": {
+    "campuses": [
+      {
+        "id": 1,
+        "name": "普陀校区",
+        "created_at": "2024-01-01T00:00:00Z"
+      },
+      {
+        "id": 2,
+        "name": "临港校区",
+        "created_at": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "total": 2
+  }
 }
 ```
 
@@ -271,6 +274,8 @@
         "name": "图书馆",
         "campus_id": 1,
         "category": "teaching",
+        "latitude": 31.2304,
+        "longitude": 121.4737,
         "memory_count": 25,
         "created_at": "2024-01-01T00:00:00Z"
       },
@@ -279,6 +284,8 @@
         "name": "第一食堂",
         "campus_id": 1,
         "category": "dining",
+        "latitude": 31.2305,
+        "longitude": 121.4738,
         "memory_count": 18,
         "created_at": "2024-01-01T00:00:00Z"
       }
@@ -289,6 +296,8 @@
 
 **字段说明**:
 - `category`: 地点类别（teaching-教学, dining-餐厅, dormitory-宿舍, scenic-景点）
+- `latitude`: 纬度
+- `longitude`: 经度
 - `memory_count`: 该地点的记忆数量
 
 ---
@@ -319,6 +328,8 @@
         "name": "图书馆",
         "campus_id": 1,
         "category": "teaching",
+        "latitude": 31.2304,
+        "longitude": 121.4737,
         "memory_count": 25,
         "created_at": "2024-01-01T00:00:00Z"
       }
@@ -351,6 +362,8 @@
     "name": "图书馆",
     "campus_id": 1,
     "category": "teaching",
+    "latitude": 31.2304,
+    "longitude": 121.4737,
     "memory_count": 25,
     "created_at": "2024-01-01T00:00:00Z"
   }
@@ -380,6 +393,8 @@
       "name": "图书馆",
       "campus_id": 1,
       "category": "teaching",
+      "latitude": 31.2304,
+      "longitude": 121.4737,
       "memory_count": 25,
       "created_at": "2024-01-01T00:00:00Z"
     }
@@ -402,6 +417,8 @@
   "campus_id": 1,
   "name": "新图书馆",
   "category": "teaching",
+  "latitude": 31.2304,
+  "longitude": 121.4737,
   "sort_order": 10
 }
 ```
@@ -410,6 +427,8 @@
 - `campus_id` (int64, 必填): 所属校区 ID
 - `name` (string, 必填): 地点名称，最大 100 字符
 - `category` (string, 可选): 地点类别，最大 50 字符
+- `latitude` (float64, 必填): 纬度，范围 -90 到 90
+- `longitude` (float64, 必填): 经度，范围 -180 到 180
 - `sort_order` (int, 可选): 显示顺序
 
 - **响应**:
@@ -423,6 +442,8 @@
     "name": "新图书馆",
     "campus_id": 1,
     "category": "teaching",
+    "latitude": 31.2304,
+    "longitude": 121.4737,
     "memory_count": 0,
     "created_at": "2024-01-01T00:00:00Z"
   }
@@ -446,6 +467,8 @@
 {
   "name": "新名称",
   "category": "scenic",
+  "latitude": 31.2306,
+  "longitude": 121.4739,
   "is_active": true,
   "sort_order": 5
 }
@@ -455,6 +478,8 @@
 - 所有字段都是可选的，只更新传入的字段
 - `name`: 最大 100 字符
 - `category`: 最大 50 字符
+- `latitude`: 纬度，范围 -90 到 90
+- `longitude`: 经度，范围 -180 到 180
 
 - **响应**:
 
@@ -515,7 +540,13 @@
             "name": "图书馆",
             "campus_id": 1,
             "category": "teaching",
-            "memory_count": 25
+            "latitude": 31.2304,
+            "longitude": 121.4737,
+            "is_active": true,
+            "sort_order": 0,
+            "memory_count": 25,
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
           }
         ],
         "count": 5
@@ -548,18 +579,20 @@
   "code": 200,
   "message": "success",
   "data": {
-    "locations": [
+    "list": [
       {
         "id": 1,
         "name": "图书馆",
         "campus_id": 1,
         "category": "teaching",
+        "latitude": 31.2304,
+        "longitude": 121.4737,
         "memory_count": 25
       }
     ],
     "total": 10,
     "page": 1,
-    "pageSize": 20
+    "size": 20
   }
 }
 ```
@@ -587,6 +620,8 @@
       "name": "图书馆",
       "campus_id": 1,
       "category": "teaching",
+      "latitude": 31.2304,
+      "longitude": 121.4737,
       "memory_count": 100
     }
   ]
@@ -613,18 +648,20 @@
   "code": 200,
   "message": "success",
   "data": {
-    "locations": [
+    "list": [
       {
         "id": 1,
         "name": "图书馆",
         "campus_id": 1,
         "category": "teaching",
+        "latitude": 31.2304,
+        "longitude": 121.4737,
         "memory_count": 25
       }
     ],
     "total": 15,
     "page": 1,
-    "pageSize": 20
+    "size": 20
   }
 }
 ```
@@ -646,6 +683,8 @@
   "title": "图书馆的美好时光",
   "content": "今天在图书馆学习，感觉很充实",
   "locationId": 1,
+  "latitude": 31.2304,
+  "longitude": 121.4737,
   "isPublic": true,
   "tags": ["学习", "图书馆"],
   "imageUrls": [
@@ -658,7 +697,9 @@
 **字段说明**:
 - `title` (string, 必填): 记忆标题，最大 100 字符
 - `content` (string, 可选): 记忆内容，最大 5000 字符
-- `locationId` (int64, 必填): 关联的地点 ID
+- `locationId` (int64, 可选): 关联的地点 ID
+- `latitude` (float64, 必填): 纬度，范围 -90 到 90
+- `longitude` (float64, 必填): 经度，范围 -180 到 180
 - `isPublic` (bool, 可选): 是否公开，默认 true
 - `tags` (array, 可选): 标签数组
 - `imageUrls` (array, 可选): 图片 URL 数组
@@ -675,6 +716,8 @@
     "content": "今天在图书馆学习，感觉很充实",
     "locationName": "图书馆",
     "locationId": 1,
+    "latitude": 31.2304,
+    "longitude": 121.4737,
     "creator": {
       "id": 1,
       "nickname": "小明",
@@ -702,51 +745,6 @@
 
 - **接口**: `GET /api/memories/:id`
 - **描述**: 获取指定记忆的详细信息
-- **认证**: 需要 JWT 认证（用于判断是否已点赞）
-- **请求头**: `Authorization: Bearer {token}`
-- **路径参数**:
-  - `id` (int64): 记忆 ID
-
-- **响应**:
-
-```json
-{
-  "code": 200,
-  "data": {
-    "id": 1,
-    "title": "图书馆的美好时光",
-    "content": "今天在图书馆学习，感觉很充实",
-    "location_name": "图书馆",
-    "location_id": 1,
-    "creator": {
-      "id": 1,
-      "nickname": "小明",
-      "avatar": "https://example.com/avatar.jpg"
-    },
-    "like_count": 10,
-    "comment_count": 5,
-    "view_count": 100,
-    "is_liked": false,
-    "tags": ["学习", "图书馆"],
-    "images": [
-      {
-        "id": 1,
-        "url": "https://example.com/image1.jpg"
-      },
-      {
-        "id": 2,
-        "url": "https://example.com/image2.jpg"
-      }
-    ],
-    "created_at": "2024-01-01T10:00:00Z"
-  }
-}
-```
-
----
-
-- **接口**: `GET /api/memories/:id`
-- **描述**: 获取指定记忆的详细信息
 - **认证**: 可选认证（用于判断是否已点赞）
 - **请求头**: `Authorization: Bearer {token}` (可选)
 - **路径参数**:
@@ -764,6 +762,8 @@
     "content": "今天在图书馆学习，感觉很充实",
     "locationName": "图书馆",
     "locationId": 1,
+    "latitude": 31.2304,
+    "longitude": 121.4737,
     "creator": {
       "id": 1,
       "nickname": "小明",
@@ -817,6 +817,8 @@
         "content": "今天在图书馆学习...",
         "locationName": "图书馆",
         "locationId": 1,
+        "latitude": 31.2304,
+        "longitude": 121.4737,
         "creator": {
           "id": 1,
           "nickname": "小明",
@@ -855,6 +857,9 @@
 {
   "title": "新标题",
   "content": "新内容",
+  "locationId": 2,
+  "latitude": 31.2305,
+  "longitude": 121.4738,
   "isPublic": false,
   "tags": ["新标签"],
   "imageUrls": ["https://example.com/new-image.jpg"]
@@ -865,6 +870,9 @@
 - 所有字段都是可选的，只更新传入的字段
 - `title`: 最大 100 字符
 - `content`: 最大 5000 字符
+- `locationId`: 地点 ID
+- `latitude`: 纬度，范围 -90 到 90
+- `longitude`: 经度，范围 -180 到 180
 
 - **响应**:
 
@@ -1269,6 +1277,8 @@
 - campusId: 所属校区ID
 - name: 地点名称
 - category: 地点类别
+- latitude: 纬度
+- longitude: 经度
 - isActive: 是否启用
 - sortOrder: 显示顺序
 - memoryCount: 记忆数量
@@ -1283,6 +1293,8 @@
 - content: 内容
 - locationId: 关联地点ID
 - locationName: 地点名称
+- latitude: 纬度
+- longitude: 经度
 - creatorId: 创建者ID
 - isPublic: 是否公开
 - likeCount: 点赞数
