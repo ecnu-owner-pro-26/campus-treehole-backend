@@ -17,7 +17,7 @@ func InitDatabase(dbPath string) (*Database, error) {
 	// 创建数据库连接
 	db, err := NewDatabase(dbPath)
 	if err != nil {
-		return nil, fmt.Errorf("fail to create data directory: %w", err)
+		return nil, fmt.Errorf("fail to connect database: %w", err)
 	}
 
 	// 自动迁移所有模型
@@ -29,7 +29,7 @@ func InitDatabase(dbPath string) (*Database, error) {
 	return db, nil
 }
 
-// migrateAllModels 迁移所有8个模型
+// migrateAllModels 迁移所有7个模型
 func migrateAllModels(db *Database) error {
 
 	// 定义所有需要迁移的模型

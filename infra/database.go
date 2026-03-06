@@ -15,12 +15,10 @@ import (
 type Database struct {
 	DB     *gorm.DB
 	DBPath string
-	// TODO: 定义数据库连接
 }
 
 // NewDatabase 创建数据库连接
 func NewDatabase(dbPath string) (*Database, error) {
-	// TODO: 实现数据库连接
 
 	// 配置GORM日志器
 	gormLogger := logger.New(
@@ -84,6 +82,7 @@ func (d *Database) Close() error {
 	return nil
 }
 
+// AutoMigrate 自动迁移数据库表
 func (d *Database) AutoMigrate(models ...interface{}) error {
 
 	if d.DB == nil {

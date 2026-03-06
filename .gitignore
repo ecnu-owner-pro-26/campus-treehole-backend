@@ -1,41 +1,204 @@
-# 二进制文件
+# ===========================================
+# Go 相关文件
+# ===========================================
+# 编译后的二进制文件
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# 测试文件
 *.test
 *.out
+/build/
+/dist/
 
-# 依赖目录
-vendor/
+# Go 工作区文件
+go.work
+go.work.sum
 
-# SQLite数据库文件
+# ===========================================
+# 数据库文件
+# ===========================================
+/data/
 *.db
 *.db-shm
 *.db-wal
-data/
+*.sqlite
+*.sqlite3
+*.db-journal
 
-# 配置文件（可能包含敏感信息）
+# ===========================================
+# 日志文件
+# ===========================================
+/logs/
+*.log
+*.log.*
+
+# ===========================================
+# 环境变量和配置文件
+# ===========================================
+.env
+.env.local
+.env.*.local
 etc/config.local.yaml
+config.yaml
+config.yml
+config.json
 
-# 上传的文件
+# ===========================================
+# 上传和存储文件
+# ===========================================
 storage/*
 !storage/.gitkeep
+/uploads/
+/tmp/
+/temp/
 
-# IDE
-.idea/
+# ===========================================
+# IDE 和编辑器文件
+# ===========================================
+# Visual Studio Code
 .vscode/
+*.code-workspace
+
+# GoLand/IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
 *.swp
 *.swo
 *~
 
-# 日志文件
-*.log
-logs/
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
 
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ===========================================
 # 操作系统文件
+# ===========================================
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================================
+# 开发工具和缓存
+# ===========================================
+# Air (热重载工具)
+tmp/
+.air.toml
+
+# 测试覆盖率文件
+*.cover
+coverage.out
+coverage.html
+
+# 性能分析文件
+*.prof
+*.pprof
+
+# 依赖管理
+vendor/
+
+# ===========================================
+# 文档和生成文件
+# ===========================================
+# Swagger 生成的文档
+/docs/swagger.json
+/docs/swagger.yaml
+
+# 自动生成的代码
+*_gen.go
+*.pb.go
+
+# ===========================================
+# 部署相关
+# ===========================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# 部署脚本生成的文件
+deploy/
+k8s/secrets/
+
+# ===========================================
+# 备份和临时文件
+# ===========================================
+*.bak
+*.backup
+*.orig
+*.tmp
+*.temp
+
+# ===========================================
+# 安全敏感文件
+# ===========================================
+# 私钥文件
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# 证书文件
+ssl/
+certs/
+
+# ===========================================
+# 项目特定忽略
+# ===========================================
+# 测试数据
+/testdata/
+test_*.db
+
+# 脚本生成的文件
+/scripts/output/
+/scripts/logs/

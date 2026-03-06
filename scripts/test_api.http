@@ -1,0 +1,400 @@
+###
+# 校园记忆树洞后端 API 测试脚本
+# 使用 VS Code REST Client 插件或 IntelliJ HTTP Client 运行
+###
+
+# ===========================================
+# 全局变量配置
+# ===========================================
+@baseUrl = http://localhost:8080/api
+@contentType = application/json
+@token = {{auth_token}}
+
+# ===========================================
+# 1. 校区相关接口测试
+# ===========================================
+
+### 获取校区列表
+GET {{baseUrl}}/campuses
+Accept: application/json
+
+### 获取指定校区的地点列表
+GET {{baseUrl}}/campuses/1/locations
+Accept: application/json
+
+# ===========================================
+# 2. 用户认证相关接口测试（微信登录）
+# ===========================================
+
+### 微信登录（首次登录）
+# @name wechatLogin
+POST {{baseUrl}}/auth/wechat/login
+Content-Type: {{contentType}}
+
+{
+  "code": "test_wx_code_123456",
+  "nickname": "测试用户",
+  "avatar": "https://example.com/avatar.jpg"
+}
+
+### 提取登录token
+@auth_token = {{wechatLogin.response.body.data.token}}
+
+### 微信登录（再次登录，测试已有用户）
+POST {{baseUrl}}/auth/wechat/login
+Content-Type: {{contentType}}
+
+{
+  "code": "test_wx_code_123456",
+  "nickname": "更新后的昵称",
+  "avatar": "https://example.com/new_avatar.jpg"
+}
+
+### 提取登录token
+@auth_token_updated = {{login.response.body.data.token}}
+
+### 获取用户个人信息(使用首次登录token)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 获取用户个人信息(使用再次登录token)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token_updated}}
+Accept: application/json
+
+### 更新个人信息(使用首次登录token)
+PUT {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "nickname": "通过首次登录token更新的昵称",
+  "avatar": "新头像",
+  "default_campus_id": 1
+}
+
+### 更新个人信息(使用更新后登录token)
+PUT {{baseUrl}}/auth/profile
+Authorization: Bearer {{auth_token_updated}}
+Content-Type: {{contentType}}
+
+{
+  "nickname": "通过第二次登录token更新的昵称",
+  "avatar": "新头像",
+  "default_campus_id": 1
+}
+
+### 用户登录 - 错误密码测试
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "wrongpassword"
+}
+
+### 用户注册 - 重复用户名测试
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "password123",
+  "email": "test2@example.com",
+  "phone": "13800138001",
+  "nickname": "测试用户2"
+}
+
+# ===========================================
+# 3. 记忆相关接口测试
+# ===========================================
+
+### 创建记忆
+# @name createMemory
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "美丽的校园一角",
+  "content": "今天在图书馆旁边发现了一个很安静的小花园，阳光透过树叶洒下来特别美。",
+  "location_name": "图书馆后花园",
+  "location_id": 1,
+  "is_public": true,
+  "tags": ["校园", "风景", "安静"]
+}
+
+### 提取记忆ID
+@memory_id = {{createMemory.response.body.data.id}}
+
+### 获取记忆详情
+GET {{baseUrl}}/memories/{{memory_id}}
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 获取记忆列表
+GET {{baseUrl}}/memories?page=1&page_size=10
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 获取记忆列表 - 带筛选条件
+GET {{baseUrl}}/memories?page=1&page_size=10&is_public=true
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 更新记忆
+PUT {{baseUrl}}/memories/{{memory_id}}
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "美丽的校园一角（已更新）",
+  "content": "今天在图书馆旁边发现了一个很安静的小花园，阳光透过树叶洒下来特别美。更新：还看到了几只可爱的小猫。",
+  "tags": ["校园", "风景", "安静", "小猫"]
+}
+
+### 创建第二个记忆用于测试
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "食堂的美食",
+  "content": "今天食堂新推出的麻辣香锅真的太好吃了！",
+  "location_name": "第一食堂",
+  "location_id": 2,
+  "is_public": true,
+  "tags": ["美食", "食堂"]
+}
+
+### 删除记忆
+DELETE {{baseUrl}}/memories/{{memory_id}}
+Authorization: Bearer {{auth_token}}
+
+### 获取已删除的记忆（应该返回404）
+GET {{baseUrl}}/memories/{{memory_id}}
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+# ===========================================
+# 4. 评论相关接口测试
+# ===========================================
+
+### 为记忆创建评论
+# @name createComment
+POST {{baseUrl}}/memories/1/comments
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "content": "这个地方我也去过，确实很美！"
+}
+
+### 提取评论ID
+@comment_id = {{createComment.response.body.data.id}}
+
+### 获取记忆的评论列表
+GET {{baseUrl}}/memories/1/comments?page=1&page_size=10
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 创建第二条评论
+POST {{baseUrl}}/memories/1/comments
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "content": "下次我也要去看看！"
+}
+
+### 删除评论
+DELETE {{baseUrl}}/comments/{{comment_id}}
+Authorization: Bearer {{auth_token}}
+
+### 删除不存在的评论（应该返回404）
+DELETE {{baseUrl}}/comments/99999
+Authorization: Bearer {{auth_token}}
+
+# ===========================================
+# 5. 点赞相关接口测试
+# ===========================================
+
+### 点赞记忆（翻转点赞状态）
+POST {{baseUrl}}/memories/1/like
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+### 再次点赞记忆（应该取消点赞）
+POST {{baseUrl}}/memories/1/like
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+### 点赞评论（翻转点赞状态）
+POST {{baseUrl}}/comments/1/like
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+### 再次点赞评论（应该取消点赞）
+POST {{baseUrl}}/comments/1/like
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+### 使用通用点赞接口 - 点赞记忆
+POST {{baseUrl}}/likes/toggle
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "target_id": 1,
+  "target_type": 1
+}
+
+### 使用通用点赞接口 - 点赞评论
+POST {{baseUrl}}/likes/toggle
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "target_id": 1,
+  "target_type": 2
+}
+
+### 获取点赞状态
+GET {{baseUrl}}/likes/status?target_id=1&target_type=1
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+# ===========================================
+# 6. 地点相关接口测试
+# ===========================================
+
+### 获取指定地点的记忆列表
+GET {{baseUrl}}/locations/1/memories?page=1&page_size=10
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+# ===========================================
+# 7. 错误处理测试
+# ===========================================
+
+### 未授权访问测试
+GET {{baseUrl}}/memories
+Accept: application/json
+
+### 无效Token测试
+GET {{baseUrl}}/memories
+Authorization: Bearer invalid_token_here
+Accept: application/json
+
+### 访问不存在的资源
+GET {{baseUrl}}/memories/99999
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### 无效的请求参数
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "",
+  "content": ""
+}
+
+### 超长内容测试
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "超长标题测试" + "x".repeat(1000),
+  "content": "超长内容测试" + "x".repeat(10000),
+  "location_name": "测试地点",
+  "is_public": true
+}
+
+# ===========================================
+# 8. 性能测试（批量请求）
+# ===========================================
+
+### 批量创建记忆测试
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "批量测试记忆 1",
+  "content": "这是批量测试的第一条记忆",
+  "location_name": "测试地点1",
+  "is_public": true
+}
+
+###
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "批量测试记忆 2",
+  "content": "这是批量测试的第二条记忆",
+  "location_name": "测试地点2",
+  "is_public": true
+}
+
+###
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "批量测试记忆 3",
+  "content": "这是批量测试的第三条记忆",
+  "location_name": "测试地点3",
+  "is_public": true
+}
+
+# ===========================================
+# 9. 边界条件测试
+# ===========================================
+
+### 空请求体测试
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{}
+
+### 特殊字符测试
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "特殊字符测试 !@#$%^&*()_+-=[]{}|;':\",./<>?",
+  "content": "内容包含特殊字符：<script>alert('xss')</script>",
+  "location_name": "特殊字符地点 & < > \" '",
+  "is_public": true
+}
+
+### 中文字符测试
+POST {{baseUrl}}/memories
+Authorization: Bearer {{auth_token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "中文标题测试：美丽的校园风景",
+  "content": "这里有很多中文内容，包括各种标点符号：，。！？；：""''（）【】",
+  "location_name": "中文地点名称",
+  "is_public": true,
+  "tags": ["中文标签", "测试", "校园"]
+}
+
+# ===========================================
+# 测试说明
+# ===========================================
+# 1. 请确保服务器在 localhost:8080 运行
+# 2. 首先运行注册和登录接口获取 token
+# 3. 某些测试依赖于前面创建的数据
+# 4. 错误测试用例应该返回相应的错误状态码
+# 5. 可以根据实际需要调整测试数据和参数
