@@ -63,7 +63,9 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	// 1. 微信登录
 	auth := api.Group("/auth")
 	{
-		auth.POST("/wechat/login", authHandler.WechatLogin) // 微信登录
+		auth.POST("/wechat/login", authHandler.WechatLogin)   // 微信登录（标准路由）
+		auth.POST("/wechat-login", authHandler.WechatLogin)   // 微信登录（兼容连字符）
+		auth.POST("/login", authHandler.WechatLogin)          // 微信登录（兼容简化路由）
 	}
 
 	// 2. 校区和地点列表
@@ -104,6 +106,8 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	authenticated := api.Group("")
 	authenticated.Use(middleware.JWTAuth())
 	{
+		// 图片上传（兼容简化路由）
+		authenticated.POST("/upload", imageHandler.UploadImage)
 		// 用户信息管理
 		authRoutes := authenticated.Group("/auth")
 		{
