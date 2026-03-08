@@ -20,10 +20,10 @@ func InitDatabase(dbPath string) (*Database, error) {
 		return nil, fmt.Errorf("fail to connect database: %w", err)
 	}
 
-	// 自动迁移所有模型
-	if err := migrateAllModels(db); err != nil {
-		return nil, fmt.Errorf("fail to migrate models: %w", err)
-	}
+	// 自动迁移所有模型（已禁用，使用手动创建的数据库）
+	// if err := migrateAllModels(db); err != nil {
+	// 	return nil, fmt.Errorf("fail to migrate models: %w", err)
+	// }
 
 	// 返回Database实例
 	return db, nil
