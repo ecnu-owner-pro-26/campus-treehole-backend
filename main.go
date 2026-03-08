@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	// TODO: 添加 Swagger 支持时取消注释
 	// swaggerFiles "github.com/swaggo/files"
 	// ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,6 +21,14 @@ import (
 
 // 应用程序入口
 func main() {
+	// 加载 .env 文件
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using system environment variables")
+	}
+
+	// 打印配置信息（调试用）
+	log.Printf("WECHAT_APPID: %s", os.Getenv("WECHAT_APPID"))
+	log.Printf("JWT_SECRET: %s", maskString(os.Getenv("JWT_SECRET")))
 
 	// 初始化数据库
 	db, err := infra.InitDatabase("data/campus_memory.db")
@@ -66,4 +76,13 @@ func main() {
 	}
 	log.Println("Database closed successfully")
 
+}
+
+
+// maskString 隐藏字符串中间部分，用于日志输出
+func maskString(s string) string {
+	if len(s) <= 8 {
+		return "****"
+	}
+	return s[:4] + "****" + s[len(s)-4:]
 }
