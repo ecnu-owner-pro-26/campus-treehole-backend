@@ -3,16 +3,16 @@ package main
 import (
 	"campus-memory/api/router"
 	"campus-memory/infra"
-	"campus-memory/utils"
 	"context"
 	"errors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
+
+
 	// TODO: 添加 Swagger 支持时取消注释
 	// swaggerFiles "github.com/swaggo/files"
 	// ginSwagger "github.com/swaggo/gin-swagger"
@@ -20,6 +20,14 @@ import (
 
 // 应用程序入口
 func main() {
+	// 加载 .env 文件
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using system environment variables")
+	}
+
+	// 打印配置信息（调试用）
+	log.Printf("WECHAT_APPID: %s", os.Getenv("WECHAT_APPID"))
+	log.Printf("JWT_SECRET: %s", maskString(os.Getenv("JWT_SECRET")))
 
 	// 初始化数据库
 	db, err := infra.InitDatabase("data/campus_memory.db")
@@ -33,19 +41,6 @@ func main() {
 
 	// TODO: 集成 Swagger API 文档（需要先安装依赖）
 	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	utils.GetWechatOpenID = func(code string) (*utils.WechatSession, error) {
-		// 你可以定义多个测试 code，或者用 code 动态生成 OpenID
-		if strings.HasPrefix(code, "test_") {
-			log.Printf("[模拟微信] 命中 test_ 前缀，返回模拟 session")
-			return &utils.WechatSession{
-				OpenID:  "mock_openid_" + code,
-				UnionID: "mock_unionid_" + code,
-			}, nil
-		}
-		log.Printf("[模拟微信] 未命中 test_ 前缀，返回错误")
-		return nil, errors.New("invalid code")
-	}
 
 	// 创建HTTP服务器
 	srv := &http.Server{Addr: ":8080", Handler: r}
@@ -80,4 +75,13 @@ func main() {
 	}
 	log.Println("Database closed successfully")
 
+}
+
+
+// maskString 隐藏字符串中间部分，用于日志输出
+func maskString(s string) string {
+	if len(s) <= 8 {
+		return "****"
+	}
+	return s[:4] + "****" + s[len(s)-4:]
 }

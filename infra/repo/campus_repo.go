@@ -20,7 +20,8 @@ func NewCampusRepo(db *gorm.DB) *CampusRepo {
 // GetAll 获取所有校区
 func (r *CampusRepo) GetAll(ctx context.Context) ([]model.CampusModel, error) {
 	var campuses []model.CampusModel
-	err := r.db.WithContext(ctx).Where("is_active = ?", true).
+	// SQLite 中 bool 存储为 0/1，使用 1 而不是 true
+	err := r.db.WithContext(ctx).Where("is_active = ?", 1).
 		Order("sort_order ASC, id ASC").
 		Find(&campuses).Error
 	return campuses, err
