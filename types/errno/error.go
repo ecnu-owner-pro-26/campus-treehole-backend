@@ -56,6 +56,12 @@ var (
 	// 用户相关 (15xxx)
 	ErrUserNotFound    = New(15001, "用户不存在")
 	ErrWechatLoginFail = New(15002, "微信登录失败")
+	ErrWechatConfigNotSet = New(15003, "微信配置未设置，请联系管理员")
+	ErrWechatAPIUnavailable = New(15004, "微信服务暂时不可用，请稍后重试")
+	ErrWechatCodeExpired = New(15005, "登录凭证已过期，请重新登录")
+	ErrWechatCodeUsed = New(15006, "登录凭证已使用，请重新登录")
+	ErrWechatConfigInvalid = New(15007, "微信配置错误，请联系管理员")
+	ErrWechatLoginAbnormal = New(15008, "微信登录异常，请稍后重试")
 
 	// 校区地点相关 (16xxx)
 	ErrCampusNotFound      = New(16001, "校区不存在")
