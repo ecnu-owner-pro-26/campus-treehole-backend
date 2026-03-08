@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 
 	// TODO: 添加 Swagger 支持时取消注释
 	// swaggerFiles "github.com/swaggo/files"
