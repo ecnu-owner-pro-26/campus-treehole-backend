@@ -5,6 +5,7 @@ import (
 	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -115,4 +116,28 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 	// 返回成功响应
 	util.SuccessResponse(c, gin.H{"message": "更新成功"})
+}
+
+// GetPublicProfile 获取他人主页
+func (h *AuthHandler) GetPublicProfile(c *gin.Context) {
+	// 从URL参数获取用户ID，比如 /api/users/123 里的 123
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		util.ErrorResponse(c, errno.ErrBadRequest.Code, "用户ID格式错误")
+		return
+	}
+
+	// 调用服务层
+	resp, err := h.authService.GetPublicUserProfile(c.Request.Context(), userID)
+	if err != nil {
+		if e, ok := err.(*errno.Error); ok {
+			util.ErrorResponse(c, e.Code, e.Message)
+		} else {
+			util.ErrorResponse(c, errno.ErrServerError.Code, errno.ErrServerError.Message)
+		}
+		return
+	}
+
+	util.SuccessResponse(c, resp)
 }

@@ -118,15 +118,23 @@ func (s *AuthService) GetUserProfile(ctx context.Context, userID int64) (*dto.Us
 		return nil, err
 	}
 
+	// 查询统计数据
+	memoryCount, totalLikes, commentCount, _ := s.userRepo.GetUserStats(userID)
+
 	// 组装响应
 	response := &dto.UserProfileResponse{
 		ID:              user.ID,
 		Nickname:        user.Nickname,
 		Avatar:          user.Avatar,
+		BackgroundImage: user.BackgroundImage,
+		Bio:             user.Bio,
 		DefaultCampusID: user.DefaultCampusID,
 		Status:          user.Status,
 		Role:            user.Role,
 		CreatedAt:       user.CreatedAt,
+		MemoryCount:     memoryCount,
+		TotalLikes:      totalLikes,
+		CommentCount:    commentCount,
 	}
 
 	return response, nil
@@ -156,6 +164,14 @@ func (s *AuthService) UpdateUserProfile(ctx context.Context, userID int64, req *
 		user.DefaultCampusID = req.DefaultCampusID
 	}
 
+	if req.BackgroundImage != nil {
+		user.BackgroundImage = *req.BackgroundImage
+	}
+
+	if req.Bio != nil {
+		user.Bio = *req.Bio
+	}
+
 	// 保存更新
 	if err := s.userRepo.UpdateUser(user); err != nil {
 		return err
@@ -163,3 +179,34 @@ func (s *AuthService) UpdateUserProfile(ctx context.Context, userID int64, req *
 
 	return nil
 }
+// GetPublicUserProfile 获取他人主页（只返回公开信息）
+func (s *AuthService) GetPublicUserProfile(ctx context.Context, userID int64) (*dto.PublicUserProfileResponse, error) {
+	// 查询用户
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errno.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	// 查询统计数据
+	memoryCount, totalLikes, commentCount, _ := s.userRepo.GetUserStats(userID)
+
+	// 组装响应（不包含 Status、Role 等内部字段）
+	response := &dto.PublicUserProfileResponse{
+		ID:              user.ID,
+		Nickname:        user.Nickname,
+		Avatar:          user.Avatar,
+		BackgroundImage: user.BackgroundImage,
+		Bio:             user.Bio,
+		DefaultCampusID: user.DefaultCampusID,
+		CreatedAt:       user.CreatedAt,
+		MemoryCount:     memoryCount,
+		TotalLikes:      totalLikes,
+		CommentCount:    commentCount,
+	}
+
+	return response, nil
+}
+

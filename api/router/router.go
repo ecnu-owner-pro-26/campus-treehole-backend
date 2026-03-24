@@ -99,6 +99,10 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	r.GET("/api/comments", middleware.OptionalAuth(), commentHandler.ListComments)      // 获取评论列表
 	r.GET("/api/comments/:parentId/replies", middleware.OptionalAuth(), commentHandler.ListReplies) // 获取回复列表
 
+	// 用户主页（公开访问）
+	api.GET("/users/:id", authHandler.GetPublicProfile)
+
+
 	// ==================== 需要认证的路由 ====================
 
 	authenticated := api.Group("")
@@ -110,6 +114,12 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 			authRoutes.GET("/profile", authHandler.GetProfile)       // 获取个人信息
 			authRoutes.PUT("/profile", authHandler.UpdateProfile)    // 更新个人信息
 		}
+		// 用户主页
+		users := authenticated.Group("/users")
+		{
+			users.GET("/me", authHandler.GetProfile) // 获取自己主页（需要登录）
+		}
+
 
 		// 记忆相关路由
 		memories := authenticated.Group("/memories")

@@ -58,3 +58,30 @@ func (r *UserRepo) UpdateUser(user *model.UserModel) error {
 	user.UpdatedAt = time.Now()
 	return r.db.Save(user).Error
 }
+
+// GetUserStats 获取用户统计数据（记忆数、点赞总数、评论数）
+func (r *UserRepo) GetUserStats(userID int64) (memoryCount, totalLikes, commentCount int64, err error) {
+
+	// 1. 查询记忆数
+	err = r.db.Model(&model.MemoryModel{}).
+		Where("creator_id = ? AND deleted_at IS NULL", userID).
+		Count(&memoryCount).Error
+	if err != nil {
+		return
+	}
+
+	// 2. 查询点赞总数（把这个用户所有记忆的点赞数加起来）
+	err = r.db.Model(&model.MemoryModel{}).
+		Where("creator_id = ? AND deleted_at IS NULL", userID).
+		Select("COALESCE(SUM(like_count), 0)").
+		Scan(&totalLikes).Error
+	if err != nil {
+		return
+	}
+
+	// 3. 查询评论数
+	err = r.db.Model(&model.CommentModel{}).
+		Where("creator_id = ? AND deleted_at IS NULL", userID).
+		Count(&commentCount).Error
+	return
+}
