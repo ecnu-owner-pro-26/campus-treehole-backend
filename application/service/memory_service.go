@@ -7,6 +7,9 @@ import (
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
 	"context"
+	"log"
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -39,9 +42,10 @@ func NewMemoryService(
 }
 
 // CreateMemory 创建记忆
-func (s *MemoryService) CreateMemory(req *dto.CreateMemoryRequest, creatorID int64) (*dto.MemoryResponse, error) {
+func (s *MemoryService) CreateMemory(ctx context.Context, req *dto.CreateMemoryRequest, creatorID int64) (*dto.MemoryResponse, error) {
+	log.Printf("CreateMemory req.Tags: %v", req.Tags)
 	// 1. 验证地点是否存在
-	location, err := s.locationRepo.GetByID(*req.LocationID)
+	location, err := s.locationRepo.GetByID(ctx, *req.LocationID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrLocationNotFound
@@ -53,7 +57,7 @@ func (s *MemoryService) CreateMemory(req *dto.CreateMemoryRequest, creatorID int
 	memory := s.assembler.ToMemoryModel(req, creatorID, location.Name)
 
 	// 3. 保存到数据库
-	if err := s.memoryRepo.Create(memory); err != nil {
+	if err := s.memoryRepo.Create(ctx, memory); err != nil {
 		return nil, errno.ErrMemoryCreateFail
 	}
 
@@ -66,24 +70,24 @@ func (s *MemoryService) CreateMemory(req *dto.CreateMemoryRequest, creatorID int
 				SortOrder: i,
 			}
 			// 忽略图片保存错误,不影响主流程
-			_ = s.imageRepo.Create(image)
+			_ = s.imageRepo.Create(ctx, image)
 		}
 	}
 
 	// 5. 获取创建者信息
-	creator, _ := s.userRepo.GetUserByID(context.Background(), creatorID)
+	creator, _ := s.userRepo.GetUserByID(ctx, creatorID)
 
 	// 6. 获取图片列表
-	images, _ := s.imageRepo.GetByMemoryID(memory.ID)
+	images, _ := s.imageRepo.GetByMemoryID(ctx, memory.ID)
 
 	// 7. 组装响应
 	return s.assembler.ToMemoryResponse(memory, creator, images, false), nil
 }
 
 // GetMemory 获取记忆详情
-func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryResponse, error) {
+func (s *MemoryService) GetMemory(ctx context.Context, id int64, currentUserID *int64) (*dto.MemoryResponse, error) {
 	// 1. 获取记忆
-	memory, err := s.memoryRepo.GetByID(id)
+	memory, err := s.memoryRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrMemoryNotFound
@@ -92,21 +96,21 @@ func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryRe
 	}
 
 	// 2. 增加浏览次数
-	_ = s.memoryRepo.IncrementViewCount(id)
+	_ = s.memoryRepo.IncrementViewCount(ctx, id)
 
 	// 3. 获取创建者信息
-	creator, err := s.userRepo.GetUserByID(context.Background(), memory.CreatorID)
+	creator, err := s.userRepo.GetUserByID(ctx, memory.CreatorID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 4. 获取图片列表
-	images, _ := s.imageRepo.GetByMemoryID(id)
+	images, _ := s.imageRepo.GetByMemoryID(ctx, id)
 
 	// 5. 检查当前用户是否已点赞
 	isLiked := false
 	if currentUserID != nil {
-		isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, id, dto.LikeTargetTypeMemory)
+		isLiked, _ = s.likeRepo.CheckLiked(ctx, *currentUserID, id, dto.LikeTargetTypeMemory)
 	}
 
 	// 6. 组装响应
@@ -114,7 +118,7 @@ func (s *MemoryService) GetMemory(id int64, currentUserID *int64) (*dto.MemoryRe
 }
 
 // ListMemories 获取记忆列表
-func (s *MemoryService) ListMemories(req *dto.MemoryListRequest, currentUserID *int64) (*dto.MemoryListResponse, error) {
+func (s *MemoryService) ListMemories(ctx context.Context, req *dto.MemoryListRequest, currentUserID *int64) (*dto.MemoryListResponse, error) {
 	// 1. 设置默认值
 	if req.Page == 0 {
 		req.Page = 1
@@ -126,28 +130,42 @@ func (s *MemoryService) ListMemories(req *dto.MemoryListRequest, currentUserID *
 		req.SortBy = "latest"
 	}
 
-	// 2. 查询记忆列表
-	memories, total, err := s.memoryRepo.List(req.LocationID, req.Page, req.PageSize, req.SortBy)
+	// 2. 解析标签筛选条件
+	var tagsMask int64
+	if req.Tags != "" {
+		tagNames := strings.Split(req.Tags, ",")
+		for _, name := range tagNames {
+			name = strings.TrimSpace(name)
+			if bit, ok := model.TagNameToBit[name]; ok {
+				tagsMask |= bit
+			}
+		}
+	}
+
+	// 3. 查询记忆列表
+	memories, total, err := s.memoryRepo.List(ctx, req.LocationID, tagsMask,
+		req.MinLat, req.MaxLat, req.MinLng, req.MaxLng,
+		req.Page, req.PageSize, req.SortBy)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 组装响应列表
+	// 4. 组装响应列表
 	memoryResponses := make([]dto.MemoryResponse, 0, len(memories))
 	for _, memory := range memories {
 		// 获取创建者
-		creator, _ := s.userRepo.GetUserByID(context.Background(), memory.CreatorID)
+		creator, _ := s.userRepo.GetUserByID(ctx, memory.CreatorID)
 		if creator == nil {
 			continue
 		}
 
 		// 获取图片
-		images, _ := s.imageRepo.GetByMemoryID(memory.ID)
+		images, _ := s.imageRepo.GetByMemoryID(ctx, memory.ID)
 
 		// 检查是否已点赞
 		isLiked := false
 		if currentUserID != nil {
-			isLiked, _ = s.likeRepo.CheckLiked(*currentUserID, memory.ID, dto.LikeTargetTypeMemory)
+			isLiked, _ = s.likeRepo.CheckLiked(ctx, *currentUserID, memory.ID, dto.LikeTargetTypeMemory)
 		}
 
 		memoryResponses = append(memoryResponses, *s.assembler.ToMemoryResponse(memory, creator, images, isLiked))
@@ -162,9 +180,9 @@ func (s *MemoryService) ListMemories(req *dto.MemoryListRequest, currentUserID *
 }
 
 // UpdateMemory 更新记忆
-func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, userID int64) error {
+func (s *MemoryService) UpdateMemory(ctx context.Context, id int64, req *dto.UpdateMemoryRequest, userID int64) error {
 	// 1. 获取记忆
-	memory, err := s.memoryRepo.GetByID(id)
+	memory, err := s.memoryRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errno.ErrMemoryNotFound
@@ -179,7 +197,7 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 
 	// 3. 如果更新了 LocationID，需要同步更新 LocationName
 	if req.LocationID != nil && (memory.LocationID == nil || *req.LocationID != *memory.LocationID) {
-		location, err := s.locationRepo.GetByID(*req.LocationID)
+		location, err := s.locationRepo.GetByID(ctx, *req.LocationID)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return errno.ErrLocationNotFound
@@ -193,14 +211,14 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 	s.assembler.UpdateMemoryModel(memory, req)
 
 	// 5. 保存到数据库
-	if err := s.memoryRepo.Update(memory); err != nil {
+	if err := s.memoryRepo.Update(ctx, memory); err != nil {
 		return errno.ErrMemoryUpdateFail
 	}
 
 	// 6. 更新图片关联(如果有)
 	if req.ImageURLs != nil {
 		// 删除旧图片
-		_ = s.imageRepo.DeleteByMemoryID(id)
+		_ = s.imageRepo.DeleteByMemoryID(ctx, id)
 		// 添加新图片
 		for i, url := range req.ImageURLs {
 			image := &model.ImageModel{
@@ -208,7 +226,7 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 				URL:       url,
 				SortOrder: i,
 			}
-			_ = s.imageRepo.Create(image)
+			_ = s.imageRepo.Create(ctx, image)
 		}
 	}
 
@@ -216,9 +234,9 @@ func (s *MemoryService) UpdateMemory(id int64, req *dto.UpdateMemoryRequest, use
 }
 
 // DeleteMemory 删除记忆
-func (s *MemoryService) DeleteMemory(id int64, userID int64) error {
+func (s *MemoryService) DeleteMemory(ctx context.Context, id int64, userID int64) error {
 	// 1. 获取记忆
-	memory, err := s.memoryRepo.GetByID(id)
+	memory, err := s.memoryRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errno.ErrMemoryNotFound
@@ -232,9 +250,73 @@ func (s *MemoryService) DeleteMemory(id int64, userID int64) error {
 	}
 
 	// 3. 软删除
-	if err := s.memoryRepo.Delete(id); err != nil {
+	if err := s.memoryRepo.Delete(ctx, id); err != nil {
 		return errno.ErrMemoryDeleteFail
 	}
 
 	return nil
+}
+
+// SearchMemories 搜索记忆
+func (s *MemoryService) SearchMemories(ctx context.Context, req *dto.SearchMemoriesRequest, currentUserID *int64) (*dto.SearchMemoriesResponse, error) {
+
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+	if req.PageSize > 100 {
+		req.PageSize = 100
+	}
+	if req.SortBy == "" {
+		req.SortBy = "relevance"
+	}
+
+	// 解析标签筛选
+	var tagsMask int64
+	if req.Tags != "" {
+		tagNames := strings.Split(req.Tags, ",")
+		for _, name := range tagNames {
+			name = strings.TrimSpace(name)
+			if bit, ok := model.TagNameToBit[name]; ok {
+				tagsMask |= bit
+			}
+		}
+	}
+
+	// 标签模式
+	tagMode := req.TagMode
+	if tagMode == "" {
+		tagMode = "or"
+	}
+
+	// 调用仓库层搜索
+	memories, total, err := s.memoryRepo.Search(ctx, req.Keyword, tagsMask, tagMode, req.Page, req.PageSize, req.SortBy, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 组装响应（复用 MemoryResponse 组装逻辑）
+	responses := make([]dto.MemoryResponse, 0, len(memories))
+	for _, memory := range memories {
+		creator, _ := s.userRepo.GetUserByID(ctx, memory.CreatorID)
+		if creator == nil {
+			continue
+		}
+		images, _ := s.imageRepo.GetByMemoryID(ctx, memory.ID)
+		isLiked := false
+		if currentUserID != nil {
+			isLiked, _ = s.likeRepo.CheckLiked(ctx, *currentUserID, memory.ID, dto.LikeTargetTypeMemory)
+		}
+		responses = append(responses, *s.assembler.ToMemoryResponse(memory, creator, images, isLiked))
+	}
+
+	return &dto.SearchMemoriesResponse{
+		List:     responses,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}, nil
 }

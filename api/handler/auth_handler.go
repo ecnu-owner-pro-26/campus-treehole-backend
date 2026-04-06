@@ -2,23 +2,28 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"context"
 
 	"github.com/gin-gonic/gin"
 )
 
+// AuthServiceInterface 定义了认证服务需要实现的方法，用于依赖注入和测试
+type AuthServiceInterface interface {
+	WechatLogin(ctx context.Context, req *dto.WechatLoginRequest) (*dto.LoginResponse, error)
+	GetUserProfile(ctx context.Context, userID int64) (*dto.UserProfileResponse, error)
+	UpdateUserProfile(ctx context.Context, userID int64, req *dto.UpdateProfileRequest) error
+}
+
 // AuthHandler 认证处理器
 type AuthHandler struct {
-	authService *service.AuthService
+	authService AuthServiceInterface
 }
 
 // NewAuthHandler 创建认证处理器
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{
-		authService: authService,
-	}
+func NewAuthHandler(authService AuthServiceInterface) *AuthHandler {
+	return &AuthHandler{authService: authService}
 }
 
 // WechatLogin 微信登录
@@ -31,7 +36,7 @@ func (h *AuthHandler) WechatLogin(c *gin.Context) {
 	}
 
 	// 2. 调用服务层
-	resp, err := h.authService.WechatLogin(&req)
+	resp, err := h.authService.WechatLogin(c.Request.Context(), &req)
 	if err != nil {
 		// 判断是否是自定义错误
 		if e, ok := err.(*errno.Error); ok {

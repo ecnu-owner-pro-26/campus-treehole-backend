@@ -53,7 +53,7 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	commentHandler := handler.NewCommentHandler(commentService)
 	likeHandler := handler.NewLikeHandler(likeService)
 	imageHandler := handler.NewImageHandler(imageService)
-	quicknavHandler := handler.NewQuickNavHandler(*quicknavService)
+	quicknavHandler := handler.NewQuickNavHandler(quicknavService)
 
 	// API路由组
 	api := r.Group("/api")
@@ -63,42 +63,42 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	// 1. 微信登录
 	auth := api.Group("/auth")
 	{
-		auth.POST("/wechat/login", authHandler.WechatLogin)   // 微信登录（标准路由）
-		auth.POST("/wechat-login", authHandler.WechatLogin)   // 微信登录（兼容连字符）
-		auth.POST("/login", authHandler.WechatLogin)          // 微信登录（兼容简化路由）
+		auth.POST("/wechat/login", authHandler.WechatLogin) // 微信登录（标准路由）
+		auth.POST("/wechat-login", authHandler.WechatLogin) // 微信登录（兼容连字符）
+		auth.POST("/login", authHandler.WechatLogin)        // 微信登录（兼容简化路由）
 	}
 
 	// 2. 校区和地点列表
 	campuses := api.Group("/campuses")
 	{
-		campuses.GET("", campusHandler.ListCampuses)                       // 获取校区列表
-		campuses.GET("/:id", campusHandler.GetCampus)                      // 获取校区详情
+		campuses.GET("", campusHandler.ListCampuses)                         // 获取校区列表
+		campuses.GET("/:id", campusHandler.GetCampus)                        // 获取校区详情
 		campuses.GET("/:id/locations", campusHandler.GetCampusWithLocations) // 获取校区地点列表
 	}
 
 	// 3. 快速导航（公开访问）
 	quicknav := api.Group("/quicknav")
 	{
-		quicknav.GET("/tree", quicknavHandler.GetNavTree)                       // 获取导航树
-		quicknav.GET("/search", quicknavHandler.SearchLocations)                // 搜索地点
-		quicknav.GET("/popular", quicknavHandler.GetPopularLocations)           // 获取热门地点
-		quicknav.GET("/category", quicknavHandler.GetLocationsByCategory)       // 根据类别获取地点
+		quicknav.GET("/tree", quicknavHandler.GetNavTree)                 // 获取导航树
+		quicknav.GET("/popular", quicknavHandler.GetPopularLocations)     // 获取热门地点
+		quicknav.GET("/category", quicknavHandler.GetLocationsByCategory) // 根据类别获取地点
 	}
 
 	// 4. 地点列表（公开访问）
 	locations := api.Group("/locations")
 	{
-		locations.GET("", locationHandler.ListLocations)       // 获取地点列表
-		locations.GET("/:id", locationHandler.GetLocation)     // 获取地点详情
+		locations.GET("", locationHandler.ListLocations)          // 获取地点列表
+		locations.GET("/:id", locationHandler.GetLocation)        // 获取地点详情
 		locations.GET("/search", locationHandler.SearchLocations) // 搜索地点
 	}
 
 	// 5. 记忆列表（公开访问，使用可选认证）
-	r.GET("/api/memories", middleware.OptionalAuth(), memoryHandler.ListMemories)       // 获取记忆列表
-	r.GET("/api/memories/:id", middleware.OptionalAuth(), memoryHandler.GetMemory)      // 获取记忆详情
+	r.GET("/api/memories", middleware.OptionalAuth(), memoryHandler.ListMemories) // 获取记忆列表
+	r.GET("/tags", memoryHandler.GetTags)
+	r.GET("/api/memories/:id", middleware.OptionalAuth(), memoryHandler.GetMemory) // 获取记忆详情
 
 	// 6. 评论列表（公开访问，使用可选认证）
-	r.GET("/api/comments", middleware.OptionalAuth(), commentHandler.ListComments)      // 获取评论列表
+	r.GET("/api/comments", middleware.OptionalAuth(), commentHandler.ListComments)                  // 获取评论列表
 	r.GET("/api/comments/:parentId/replies", middleware.OptionalAuth(), commentHandler.ListReplies) // 获取回复列表
 
 	// ==================== 需要认证的路由 ====================
@@ -111,29 +111,30 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		// 用户信息管理
 		authRoutes := authenticated.Group("/auth")
 		{
-			authRoutes.GET("/profile", authHandler.GetProfile)       // 获取个人信息
-			authRoutes.PUT("/profile", authHandler.UpdateProfile)    // 更新个人信息
+			authRoutes.GET("/profile", authHandler.GetProfile)    // 获取个人信息
+			authRoutes.PUT("/profile", authHandler.UpdateProfile) // 更新个人信息
 		}
 
 		// 记忆相关路由
 		memories := authenticated.Group("/memories")
 		{
-			memories.POST("", memoryHandler.CreateMemory)           // 创建记忆
-			memories.PUT("/:id", memoryHandler.UpdateMemory)        // 更新记忆
-			memories.DELETE("/:id", memoryHandler.DeleteMemory)     // 删除记忆
+			memories.POST("", memoryHandler.CreateMemory)         // 创建记忆
+			memories.PUT("/:id", memoryHandler.UpdateMemory)      // 更新记忆
+			memories.DELETE("/:id", memoryHandler.DeleteMemory)   // 删除记忆
+			memories.GET("/search", memoryHandler.SearchMemories) // 搜索记忆
 
 			// 记忆点赞
-			memories.POST("/:id/like", likeHandler.ToggleLike)      // 切换记忆点赞状态
+			memories.POST("/:id/like", likeHandler.ToggleLike) // 切换记忆点赞状态
 		}
 
 		// 评论相关路由
 		comments := authenticated.Group("/comments")
 		{
-			comments.POST("", commentHandler.CreateComment)         // 创建评论
-			comments.DELETE("/:id", commentHandler.DeleteComment)   // 删除评论
+			comments.POST("", commentHandler.CreateComment)       // 创建评论
+			comments.DELETE("/:id", commentHandler.DeleteComment) // 删除评论
 
 			// 评论点赞
-			comments.POST("/:id/like", likeHandler.ToggleLike)      // 切换评论点赞状态
+			comments.POST("/:id/like", likeHandler.ToggleLike) // 切换评论点赞状态
 		}
 
 		// 地点管理（需要认证）
@@ -147,9 +148,9 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		// 图片上传
 		images := authenticated.Group("/images")
 		{
-			images.POST("/upload", imageHandler.UploadImage)                    // 上传图片
-			images.DELETE("/:id", imageHandler.DeleteImage)                     // 删除图片
-			images.GET("/memory/:memory_id", imageHandler.GetImagesByMemoryID)  // 获取记忆的所有图片
+			images.POST("/upload", imageHandler.UploadImage)                   // 上传图片
+			images.DELETE("/:id", imageHandler.DeleteImage)                    // 删除图片
+			images.GET("/memory/:memory_id", imageHandler.GetImagesByMemoryID) // 获取记忆的所有图片
 		}
 	}
 

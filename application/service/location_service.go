@@ -5,6 +5,7 @@ import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
+	"context"
 
 	"gorm.io/gorm"
 )
@@ -29,9 +30,9 @@ func NewLocationService(
 }
 
 // GetLocation 获取地点详情
-func (s *LocationService) GetLocation(id int64) (*dto.LocationResponse, error) {
+func (s *LocationService) GetLocation(ctx context.Context, id int64) (*dto.LocationResponse, error) {
 	// 1. 获取地点
-	location, err := s.locationRepo.GetByID(id)
+	location, err := s.locationRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrLocationNotFound
@@ -44,7 +45,7 @@ func (s *LocationService) GetLocation(id int64) (*dto.LocationResponse, error) {
 }
 
 // ListLocations 获取地点列表
-func (s *LocationService) ListLocations(req *dto.LocationListRequest) (*dto.LocationListResponse, error) {
+func (s *LocationService) ListLocations(ctx context.Context, req *dto.LocationListRequest) (*dto.LocationListResponse, error) {
 	// 1. 设置默认值
 	if req.Page == 0 {
 		req.Page = 1
@@ -54,7 +55,7 @@ func (s *LocationService) ListLocations(req *dto.LocationListRequest) (*dto.Loca
 	}
 
 	// 2. 查询地点列表
-	locations, total, err := s.locationRepo.List(req.CampusID, req.Category, req.Page, req.PageSize)
+	locations, total, err := s.locationRepo.List(ctx, req.CampusID, req.Category, req.Page, req.PageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -74,9 +75,9 @@ func (s *LocationService) ListLocations(req *dto.LocationListRequest) (*dto.Loca
 }
 
 // CreateLocation 创建地点
-func (s *LocationService) CreateLocation(req *dto.CreateLocationRequest) (*dto.LocationResponse, error) {
+func (s *LocationService) CreateLocation(ctx context.Context, req *dto.CreateLocationRequest) (*dto.LocationResponse, error) {
 	// 1. 验证校区是否存在
-	_, err := s.campusRepo.GetByID(req.CampusID)
+	_, err := s.campusRepo.GetByID(ctx, req.CampusID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errno.ErrCampusNotFound
@@ -88,7 +89,7 @@ func (s *LocationService) CreateLocation(req *dto.CreateLocationRequest) (*dto.L
 	location := s.assembler.ToLocationModel(req)
 
 	// 3. 保存到数据库
-	if err := s.locationRepo.Create(location); err != nil {
+	if err := s.locationRepo.Create(ctx, location); err != nil {
 		return nil, errno.ErrLocationCreateFail
 	}
 
@@ -97,9 +98,9 @@ func (s *LocationService) CreateLocation(req *dto.CreateLocationRequest) (*dto.L
 }
 
 // UpdateLocation 更新地点
-func (s *LocationService) UpdateLocation(id int64, req *dto.UpdateLocationRequest) error {
+func (s *LocationService) UpdateLocation(ctx context.Context, id int64, req *dto.UpdateLocationRequest) error {
 	// 1. 获取地点
-	location, err := s.locationRepo.GetByID(id)
+	location, err := s.locationRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errno.ErrLocationNotFound
@@ -111,7 +112,7 @@ func (s *LocationService) UpdateLocation(id int64, req *dto.UpdateLocationReques
 	s.assembler.UpdateLocationModel(location, req)
 
 	// 3. 保存到数据库
-	if err := s.locationRepo.Update(location); err != nil {
+	if err := s.locationRepo.Update(ctx, location); err != nil {
 		return errno.ErrLocationUpdateFail
 	}
 
@@ -119,9 +120,9 @@ func (s *LocationService) UpdateLocation(id int64, req *dto.UpdateLocationReques
 }
 
 // DeleteLocation 删除地点
-func (s *LocationService) DeleteLocation(id int64) error {
+func (s *LocationService) DeleteLocation(ctx context.Context, id int64) error {
 	// 1. 获取地点
-	_, err := s.locationRepo.GetByID(id)
+	_, err := s.locationRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errno.ErrLocationNotFound
@@ -130,7 +131,7 @@ func (s *LocationService) DeleteLocation(id int64) error {
 	}
 
 	// 2. 软删除
-	if err := s.locationRepo.Delete(id); err != nil {
+	if err := s.locationRepo.Delete(ctx, id); err != nil {
 		return errno.ErrLocationDeleteFail
 	}
 
@@ -138,9 +139,9 @@ func (s *LocationService) DeleteLocation(id int64) error {
 }
 
 // SearchLocations 搜索地点
-func (s *LocationService) SearchLocations(keyword string, campusID *int64) ([]dto.LocationResponse, error) {
+func (s *LocationService) SearchLocations(ctx context.Context, keyword string, campusID *int64) ([]dto.LocationResponse, error) {
 	// 1. 搜索地点
-	locations, err := s.locationRepo.Search(keyword, campusID)
+	locations, err := s.locationRepo.Search(ctx, keyword, campusID)
 	if err != nil {
 		return nil, err
 	}

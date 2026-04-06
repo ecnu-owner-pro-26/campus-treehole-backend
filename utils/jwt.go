@@ -8,6 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var GenerateToken func(userID int64, openID string) (string, error) = generateTokenImpl
+
 // Claims JWT载荷结构
 type Claims struct {
 	UserID int64  `json:"user_id"` // 用户ID
@@ -31,21 +33,21 @@ func GetJWTExpireHours() int {
 	if hoursStr == "" {
 		return 168 // 默认7天
 	}
-	
+
 	hours, err := strconv.Atoi(hoursStr)
 	if err != nil {
 		return 168 // 解析失败使用默认值
 	}
-	
+
 	return hours
 }
 
-// GenerateToken 生成JWT token
-func GenerateToken(userID int64, openid string) (string, error) {
+// generateTokenImpl 生成JWT token
+func generateTokenImpl(userID int64, openid string) (string, error) {
 	// 设置过期时间
 	expireHours := GetJWTExpireHours()
 	expirationTime := time.Now().Add(time.Duration(expireHours) * time.Hour)
-	
+
 	// 创建声明
 	claims := &Claims{
 		UserID: userID,
@@ -56,16 +58,16 @@ func GenerateToken(userID int64, openid string) (string, error) {
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
-	
+
 	// 创建token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	
+
 	// 签名并返回
 	tokenString, err := token.SignedString(GetJWTSecret())
 	if err != nil {
 		return "", err
 	}
-	
+
 	return tokenString, nil
 }
 
@@ -75,15 +77,15 @@ func ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return GetJWTSecret(), nil
 	})
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 验证token并提取claims
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
-	
+
 	return nil, jwt.ErrSignatureInvalid
 }

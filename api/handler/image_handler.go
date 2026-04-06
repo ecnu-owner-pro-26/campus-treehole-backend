@@ -2,9 +2,9 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,13 +14,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ImageServiceInterface 定义图片服务需要实现的方法
+type ImageServiceInterface interface {
+	UploadImage(ctx context.Context, req *dto.UploadImageRequest, url string, size int64) (*dto.UploadImageResponse, error)
+	DeleteImage(ctx context.Context, id int64, userID int64) error
+	GetImagesByMemoryID(ctx context.Context, memoryID int64) ([]dto.ImageInfo, error)
+}
+
 // ImageHandler 图片上传处理器
 type ImageHandler struct {
-	imageService *service.ImageService
+	imageService ImageServiceInterface
 }
 
 // NewImageHandler 创建图片处理器实例
-func NewImageHandler(imageService *service.ImageService) *ImageHandler {
+func NewImageHandler(imageService ImageServiceInterface) *ImageHandler {
 	return &ImageHandler{
 		imageService: imageService,
 	}
@@ -88,7 +95,7 @@ func (h *ImageHandler) UploadImage(c *gin.Context) {
 	req := &dto.UploadImageRequest{
 		MemoryID: memoryID,
 	}
-	resp, err := h.imageService.UploadImage(req, imageURL, file.Size)
+	resp, err := h.imageService.UploadImage(c.Request.Context(), req, imageURL, file.Size)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
@@ -120,7 +127,7 @@ func (h *ImageHandler) DeleteImage(c *gin.Context) {
 	}
 
 	// 3. 调用服务层
-	if err := h.imageService.DeleteImage(id, userID.(int64)); err != nil {
+	if err := h.imageService.DeleteImage(c.Request.Context(), id, userID.(int64)); err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
 		} else {
@@ -144,7 +151,7 @@ func (h *ImageHandler) GetImagesByMemoryID(c *gin.Context) {
 	}
 
 	// 2. 调用服务层
-	images, err := h.imageService.GetImagesByMemoryID(memoryID)
+	images, err := h.imageService.GetImagesByMemoryID(c.Request.Context(), memoryID)
 	if err != nil {
 		util.ErrorResponse(c, errno.ErrServerError.Code, errno.ErrServerError.Message)
 		return

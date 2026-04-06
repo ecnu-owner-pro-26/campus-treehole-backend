@@ -5,6 +5,7 @@ import (
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
 	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -29,10 +30,10 @@ func NewLikeService(
 }
 
 // ToggleLike 切换点赞状态（统一方法，通过targetType区分记忆/评论）
-func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.ToggleLikeResponse, error) {
+func (s *LikeService) ToggleLike(ctx context.Context, userID, targetID int64, targetType int8) (*dto.ToggleLikeResponse, error) {
 	// 1. 根据targetType检查目标是否存在
 	if targetType == dto.LikeTargetTypeMemory {
-		_, err := s.memoryRepo.GetByID(targetID)
+		_, err := s.memoryRepo.GetByID(ctx, targetID)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, errno.ErrMemoryNotFound
@@ -53,7 +54,7 @@ func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.
 	}
 
 	// 2. 检查是否已点赞
-	isLiked, err := s.likeRepo.CheckLiked(userID, targetID, targetType)
+	isLiked, err := s.likeRepo.CheckLiked(ctx, userID, targetID, targetType)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +63,13 @@ func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.
 	var delta int64
 	if isLiked {
 		// 已点赞 → 取消点赞
-		if err := s.likeRepo.DeleteLike(userID, targetID, targetType); err != nil {
+		if err := s.likeRepo.DeleteLike(ctx, userID, targetID, targetType); err != nil {
 			return nil, errno.ErrLikeDeleteFail
 		}
 		delta = -1
 	} else {
 		// 未点赞 → 点赞
-		if err := s.likeRepo.CreateLike(userID, targetID, targetType); err != nil {
+		if err := s.likeRepo.CreateLike(ctx, userID, targetID, targetType); err != nil {
 			return nil, errno.ErrLikeCreateFail
 		}
 		delta = 1
@@ -76,7 +77,7 @@ func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.
 
 	// 4. 更新目标的点赞计数
 	if targetType == dto.LikeTargetTypeMemory {
-		_ = s.memoryRepo.UpdateCounts(targetID, &delta, nil)
+		_ = s.memoryRepo.UpdateCounts(ctx, targetID, &delta, nil)
 	} else if targetType == dto.LikeTargetTypeComment {
 		ctx := context.Background()
 		if delta > 0 {
@@ -87,7 +88,7 @@ func (s *LikeService) ToggleLike(userID, targetID int64, targetType int8) (*dto.
 	}
 
 	// 5. 获取最新点赞数
-	likeCount, err := s.likeRepo.GetLikeCount(targetID, targetType)
+	likeCount, err := s.likeRepo.GetLikeCount(ctx, targetID, targetType)
 	if err != nil {
 		return nil, err
 	}

@@ -2,22 +2,27 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"context"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
+// LikeServiceInterface 定义点赞服务需要实现的方法
+type LikeServiceInterface interface {
+	ToggleLike(ctx context.Context, userID, targetID int64, targetType int8) (*dto.ToggleLikeResponse, error)
+}
+
 // LikeHandler 点赞处理器
 type LikeHandler struct {
-	likeService *service.LikeService
+	likeService LikeServiceInterface
 }
 
 // NewLikeHandler 创建点赞处理器
-func NewLikeHandler(likeService *service.LikeService) *LikeHandler {
+func NewLikeHandler(likeService LikeServiceInterface) *LikeHandler {
 	return &LikeHandler{
 		likeService: likeService,
 	}
@@ -54,7 +59,7 @@ func (h *LikeHandler) ToggleLike(c *gin.Context) {
 	}
 
 	// 4. 调用服务层
-	result, err := h.likeService.ToggleLike(userID.(int64), targetID, targetType)
+	result, err := h.likeService.ToggleLike(c.Request.Context(), userID.(int64), targetID, targetType)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)

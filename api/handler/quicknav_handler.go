@@ -2,22 +2,28 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
+	"campus-memory/infra/model"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
 
 	"github.com/gin-gonic/gin"
 )
 
+type QuickNavServiceInterface interface {
+	BuildNavTree(campusID int64) ([]dto.CampusNavDTO, error)
+	GetLocationsByCategory(campusID int64, category string, page, pageSize int) ([]model.LocationModel, int64, error)
+	GetPopularLocations(campusID int64, limit int) ([]model.LocationModel, error)
+}
+
 // QuickNavHandler 快速导航处理器
 type QuickNavHandler struct {
-	quicknavService *service.QuickNavService
+	quicknavService QuickNavServiceInterface
 }
 
 // NewQuickNavHandler 创建处理器实例
-func NewQuickNavHandler(quicknavService service.QuickNavService) *QuickNavHandler {
+func NewQuickNavHandler(quicknavService QuickNavServiceInterface) *QuickNavHandler {
 	return &QuickNavHandler{
-		quicknavService: &quicknavService,
+		quicknavService: quicknavService,
 	}
 }
 
@@ -64,46 +70,6 @@ func (h *QuickNavHandler) GetLocationsByCategory(c *gin.Context) {
 
 	// 调用Service
 	locations, total, err := h.quicknavService.GetLocationsByCategory(req.CampusID, req.Category, req.Page, req.PageSize)
-	if err != nil {
-		if e, ok := err.(*errno.Error); ok {
-			util.ErrorResponse(c, e.Code, e.Message)
-		} else {
-			util.ErrorResponse(c, errno.ErrServerError.Code, errno.ErrServerError.Message)
-		}
-		return
-	}
-
-	// 统一的分页响应格式
-	util.SuccessResponse(c, gin.H{
-		"list":  locations,
-		"total": total,
-		"page":  req.Page,
-		"size":  req.PageSize,
-	})
-}
-
-// SearchLocations 搜索地点
-func (h *QuickNavHandler) SearchLocations(c *gin.Context) {
-	// 使用 DTO 接收请求参数
-	var req dto.LocationSearchRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		util.ErrorResponse(c, errno.ErrBadRequest.Code, "参数错误: "+err.Error())
-		return
-	}
-
-	// 设置默认分页
-	if req.Page <= 0 {
-		req.Page = 1
-	}
-	if req.PageSize <= 0 || req.PageSize > 100 {
-		req.PageSize = 20
-	}
-
-	// 解析校区ID
-	campusID := req.CampusID
-
-	// 调用service层
-	locations, total, err := h.quicknavService.SearchLocations(req.Keyword, campusID, req.Page, req.PageSize)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)

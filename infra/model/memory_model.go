@@ -17,7 +17,7 @@ type MemoryModel struct {
 	ViewCount    int64      `gorm:"column:view_count;type:integer;default:0" json:"view_count"`
 	LikeCount    int64      `gorm:"column:like_count;type:integer;default:0" json:"like_count"`
 	CommentCount int64      `gorm:"column:comment_count;type:integer;default:0" json:"comment_count"`
-	Tags         string     `gorm:"column:tags;type:text" json:"tags"`                           // JSON格式存储标签
+	TagsMask     int64      `gorm:"column:tags_mask;default:0" json:"tags_mask"`                 // 位掩码储存标签
 	Status       int8       `gorm:"column:status;type:integer;default:1;not null" json:"status"` // 0-待审核 1-已发布 2-已下架
 	CreatorID    int64      `gorm:"column:creator_id;type:integer;not null;index:idx_creator" json:"creator_id"`
 	CreatedAt    time.Time  `gorm:"column:created_at;type:datetime;default:CURRENT_TIMESTAMP;index:idx_created" json:"created_at"`

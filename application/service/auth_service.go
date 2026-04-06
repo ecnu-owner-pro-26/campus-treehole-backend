@@ -25,15 +25,27 @@ func NewAuthService(userRepo *repo.UserRepo) *AuthService {
 }
 
 // WechatLogin 微信登录业务逻辑
-func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginResponse, error) {
-	// 1. 调用微信API获取OpenID
-	session, err := utils.GetWechatOpenID(req.Code)
-	if err != nil {
-		return nil, err
+func (s *AuthService) WechatLogin(ctx context.Context, req *dto.WechatLoginRequest) (*dto.LoginResponse, error) {
+
+	// ========== 测试硬编码：跳过真实微信 API ==========
+	var session *utils.WechatSession
+	if req.Code == "test_111" {
+		// 使用固定测试数据
+		session = &utils.WechatSession{
+			OpenID:  "test_openid_001",
+			UnionID: "test_unionid_001",
+		}
+	} else {
+		// 正常调用微信 API
+		var err error
+		session, err = utils.GetWechatOpenID(req.Code)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 2. 查询用户是否存在
-	user, err := s.userRepo.GetUserByOpenID(session.OpenID)
+	user, err := s.userRepo.GetUserByOpenID(ctx, session.OpenID)
 
 	if err != nil {
 		// 用户不存在
@@ -53,7 +65,7 @@ func (s *AuthService) WechatLogin(req *dto.WechatLoginRequest) (*dto.LoginRespon
 				user.Nickname = "微信用户"
 			}
 
-			if err := s.userRepo.CreateUser(user); err != nil {
+			if err := s.userRepo.CreateUser(ctx, user); err != nil {
 				return nil, err
 			}
 		} else {

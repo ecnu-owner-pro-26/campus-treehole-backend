@@ -2,21 +2,33 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
+	"campus-memory/infra/model"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"context"
+	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+// MemoryServiceInterface 定义记忆服务需要实现的方法
+type MemoryServiceInterface interface {
+	CreateMemory(ctx context.Context, req *dto.CreateMemoryRequest, creatorID int64) (*dto.MemoryResponse, error)
+	GetMemory(ctx context.Context, id int64, currentUserID *int64) (*dto.MemoryResponse, error)
+	ListMemories(ctx context.Context, req *dto.MemoryListRequest, currentUserID *int64) (*dto.MemoryListResponse, error)
+	UpdateMemory(ctx context.Context, id int64, req *dto.UpdateMemoryRequest, userID int64) error
+	DeleteMemory(ctx context.Context, id int64, userID int64) error
+	SearchMemories(ctx context.Context, req *dto.SearchMemoriesRequest, currentUserID *int64) (*dto.SearchMemoriesResponse, error)
+}
+
 // MemoryHandler 记忆处理器
 type MemoryHandler struct {
-	memoryService *service.MemoryService
+	memoryService MemoryServiceInterface
 }
 
 // NewMemoryHandler 创建记忆处理器实例
-func NewMemoryHandler(memoryService *service.MemoryService) *MemoryHandler {
+func NewMemoryHandler(memoryService MemoryServiceInterface) *MemoryHandler {
 	return &MemoryHandler{
 		memoryService: memoryService,
 	}
@@ -39,7 +51,7 @@ func (h *MemoryHandler) CreateMemory(c *gin.Context) {
 	}
 
 	// 3. 调用服务层
-	memory, err := h.memoryService.CreateMemory(&req, userID.(int64))
+	memory, err := h.memoryService.CreateMemory(c.Request.Context(), &req, userID.(int64))
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
@@ -71,7 +83,7 @@ func (h *MemoryHandler) GetMemory(c *gin.Context) {
 	}
 
 	// 3. 调用服务层
-	memory, err := h.memoryService.GetMemory(id, currentUserID)
+	memory, err := h.memoryService.GetMemory(c.Request.Context(), id, currentUserID)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
@@ -102,7 +114,7 @@ func (h *MemoryHandler) ListMemories(c *gin.Context) {
 	}
 
 	// 3. 调用服务层
-	result, err := h.memoryService.ListMemories(&req, currentUserID)
+	result, err := h.memoryService.ListMemories(c.Request.Context(), &req, currentUserID)
 	if err != nil {
 		util.ErrorResponse(c, errno.ErrServerError.Code, errno.ErrServerError.Message)
 		return
@@ -137,7 +149,7 @@ func (h *MemoryHandler) UpdateMemory(c *gin.Context) {
 	}
 
 	// 4. 调用服务层
-	if err := h.memoryService.UpdateMemory(id, &req, userID.(int64)); err != nil {
+	if err := h.memoryService.UpdateMemory(c.Request.Context(), id, &req, userID.(int64)); err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
 		} else {
@@ -168,7 +180,7 @@ func (h *MemoryHandler) DeleteMemory(c *gin.Context) {
 	}
 
 	// 3. 调用服务层
-	if err := h.memoryService.DeleteMemory(id, userID.(int64)); err != nil {
+	if err := h.memoryService.DeleteMemory(c.Request.Context(), id, userID.(int64)); err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
 		} else {
@@ -179,4 +191,37 @@ func (h *MemoryHandler) DeleteMemory(c *gin.Context) {
 
 	// 4. 返回成功响应
 	util.SuccessResponse(c, nil)
+}
+
+// SearchMemories 搜索记忆
+func (h *MemoryHandler) SearchMemories(c *gin.Context) {
+	var req dto.SearchMemoriesRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		util.ErrorResponse(c, errno.ErrBadRequest.Code, "参数错误: "+err.Error())
+		return
+	}
+	// 获取当前用户ID（用于权限过滤）
+	var currentUserID *int64
+	if uid, exists := c.Get("user_id"); exists {
+		id := uid.(int64)
+		currentUserID = &id
+	}
+
+	result, err := h.memoryService.SearchMemories(c.Request.Context(), &req, currentUserID)
+	if err != nil {
+		util.ErrorResponse(c, errno.ErrServerError.Code, "搜索失败")
+		return
+	}
+
+	util.SuccessResponse(c, result)
+}
+
+// GetTags 获取所有可用标签
+func (h *MemoryHandler) GetTags(c *gin.Context) {
+	tags := make([]string, 0, len(model.TagNameToBit))
+	for name := range model.TagNameToBit {
+		tags = append(tags, name)
+	}
+	sort.Strings(tags) //可选，使标签展示顺序稳定
+	util.SuccessResponse(c, tags)
 }

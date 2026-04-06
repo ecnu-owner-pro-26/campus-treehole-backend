@@ -2,6 +2,8 @@ package repo
 
 import (
 	"campus-memory/infra/model"
+	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -16,9 +18,9 @@ func NewLocationRepo(db *gorm.DB) *LocationRepo {
 }
 
 // GetByID 根据ID获取地点
-func (r *LocationRepo) GetByID(id int64) (*model.LocationModel, error) {
+func (r *LocationRepo) GetByID(ctx context.Context, id int64) (*model.LocationModel, error) {
 	var location model.LocationModel
-	err := r.db.Where("id = ?", id).First(&location).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&location).Error
 	if err != nil {
 		return nil, err
 	}
@@ -26,20 +28,20 @@ func (r *LocationRepo) GetByID(id int64) (*model.LocationModel, error) {
 }
 
 // GetByCampusID 根据校区ID获取地点列表
-func (r *LocationRepo) GetByCampusID(campusID int64) ([]model.LocationModel, error) {
+func (r *LocationRepo) GetByCampusID(ctx context.Context, campusID int64) ([]model.LocationModel, error) {
 	var locations []model.LocationModel
-	err := r.db.Where("campus_id = ? AND is_active = ?", campusID, true).
+	err := r.db.WithContext(ctx).Where("campus_id = ? AND is_active = ?", campusID, true).
 		Order("sort_order ASC, id ASC").
 		Find(&locations).Error
 	return locations, err
 }
 
 // List 获取地点列表(分页)
-func (r *LocationRepo) List(campusID *int64, category string, page, pageSize int) ([]model.LocationModel, int64, error) {
+func (r *LocationRepo) List(ctx context.Context, campusID *int64, category string, page, pageSize int) ([]model.LocationModel, int64, error) {
 	var locations []model.LocationModel
 	var total int64
 
-	query := r.db.Model(&model.LocationModel{}).Where("is_active = ?", true)
+	query := r.db.WithContext(ctx).Model(&model.LocationModel{}).Where("is_active = ?", true)
 
 	// 按校区筛选
 	if campusID != nil {
@@ -66,18 +68,18 @@ func (r *LocationRepo) List(campusID *int64, category string, page, pageSize int
 }
 
 // GetByCategory 根据类别获取地点
-func (r *LocationRepo) GetByCategory(category string) ([]model.LocationModel, error) {
+func (r *LocationRepo) GetByCategory(ctx context.Context, category string) ([]model.LocationModel, error) {
 	var locations []model.LocationModel
-	err := r.db.Where("category = ? AND is_active = ?", category, true).
+	err := r.db.WithContext(ctx).Where("category = ? AND is_active = ?", category, true).
 		Order("sort_order ASC, id ASC").
 		Find(&locations).Error
 	return locations, err
 }
 
 // Search 搜索地点
-func (r *LocationRepo) Search(keyword string, campusID *int64) ([]model.LocationModel, error) {
+func (r *LocationRepo) Search(ctx context.Context, keyword string, campusID *int64) ([]model.LocationModel, error) {
 	var locations []model.LocationModel
-	query := r.db.Where("is_active = ? AND name LIKE ?", true, "%"+keyword+"%")
+	query := r.db.WithContext(ctx).Where("is_active = ? AND name LIKE ?", true, "%"+keyword+"%")
 
 	if campusID != nil {
 		query = query.Where("campus_id = ?", *campusID)
@@ -90,9 +92,9 @@ func (r *LocationRepo) Search(keyword string, campusID *int64) ([]model.Location
 }
 
 // GetPopular 获取热门地点
-func (r *LocationRepo) GetPopular(limit int) ([]model.LocationModel, error) {
+func (r *LocationRepo) GetPopular(ctx context.Context, limit int) ([]model.LocationModel, error) {
 	var locations []model.LocationModel
-	err := r.db.Where("is_active = ?", true).
+	err := r.db.WithContext(ctx).Where("is_active = ?", true).
 		Order("memory_count DESC").
 		Limit(limit).
 		Find(&locations).Error
@@ -100,22 +102,22 @@ func (r *LocationRepo) GetPopular(limit int) ([]model.LocationModel, error) {
 }
 
 // Create 创建地点
-func (r *LocationRepo) Create(location *model.LocationModel) error {
-	return r.db.Create(location).Error
+func (r *LocationRepo) Create(ctx context.Context, location *model.LocationModel) error {
+	return r.db.WithContext(ctx).Create(location).Error
 }
 
 // Update 更新地点
-func (r *LocationRepo) Update(location *model.LocationModel) error {
-	return r.db.Save(location).Error
+func (r *LocationRepo) Update(ctx context.Context, location *model.LocationModel) error {
+	return r.db.WithContext(ctx).Save(location).Error
 }
 
 // Delete 删除地点
-func (r *LocationRepo) Delete(id int64) error {
-	return r.db.Delete(&model.LocationModel{}, id).Error
+func (r *LocationRepo) Delete(ctx context.Context, id int64) error {
+	return r.db.WithContext(ctx).Delete(&model.LocationModel{}, id).Error
 }
 
 // UpdateMemoryCount 更新记忆数量
-func (r *LocationRepo) UpdateMemoryCount(id int64, delta int64) error {
-	return r.db.Model(&model.LocationModel{}).Where("id = ?", id).
+func (r *LocationRepo) UpdateMemoryCount(ctx context.Context, id int64, delta int64) error {
+	return r.db.WithContext(ctx).Model(&model.LocationModel{}).Where("id = ?", id).
 		Update("memory_count", gorm.Expr("memory_count + ?", delta)).Error
 }

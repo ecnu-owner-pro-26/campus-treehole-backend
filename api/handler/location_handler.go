@@ -2,21 +2,31 @@ package handler
 
 import (
 	"campus-memory/application/dto"
-	"campus-memory/application/service"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
+	"context"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+// LocationServiceInterface 定义地点服务需要实现的方法
+type LocationServiceInterface interface {
+	GetLocation(ctx context.Context, id int64) (*dto.LocationResponse, error)
+	ListLocations(ctx context.Context, req *dto.LocationListRequest) (*dto.LocationListResponse, error)
+	CreateLocation(ctx context.Context, req *dto.CreateLocationRequest) (*dto.LocationResponse, error)
+	UpdateLocation(ctx context.Context, id int64, req *dto.UpdateLocationRequest) error
+	DeleteLocation(ctx context.Context, id int64) error
+	SearchLocations(ctx context.Context, keyword string, campusID *int64) ([]dto.LocationResponse, error)
+}
+
 // LocationHandler 地点处理器
 type LocationHandler struct {
-	locationService *service.LocationService
+	locationService LocationServiceInterface
 }
 
 // NewLocationHandler 创建地点处理器实例
-func NewLocationHandler(locationService *service.LocationService) *LocationHandler {
+func NewLocationHandler(locationService LocationServiceInterface) *LocationHandler {
 	return &LocationHandler{
 		locationService: locationService,
 	}
@@ -33,7 +43,7 @@ func (h *LocationHandler) GetLocation(c *gin.Context) {
 	}
 
 	// 调用服务层
-	location, err := h.locationService.GetLocation(id)
+	location, err := h.locationService.GetLocation(c.Request.Context(), id)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
@@ -57,7 +67,7 @@ func (h *LocationHandler) ListLocations(c *gin.Context) {
 	}
 
 	// 调用服务层
-	result, err := h.locationService.ListLocations(&req)
+	result, err := h.locationService.ListLocations(c.Request.Context(), &req)
 	if err != nil {
 		util.ErrorResponse(c, errno.ErrServerError.Code, errno.ErrServerError.Message)
 		return
@@ -77,7 +87,7 @@ func (h *LocationHandler) CreateLocation(c *gin.Context) {
 	}
 
 	// 调用服务层
-	location, err := h.locationService.CreateLocation(&req)
+	location, err := h.locationService.CreateLocation(c.Request.Context(), &req)
 	if err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
@@ -109,7 +119,7 @@ func (h *LocationHandler) UpdateLocation(c *gin.Context) {
 	}
 
 	// 调用服务层
-	if err := h.locationService.UpdateLocation(id, &req); err != nil {
+	if err := h.locationService.UpdateLocation(c.Request.Context(), id, &req); err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
 		} else {
@@ -133,7 +143,7 @@ func (h *LocationHandler) DeleteLocation(c *gin.Context) {
 	}
 
 	// 调用服务层
-	if err := h.locationService.DeleteLocation(id); err != nil {
+	if err := h.locationService.DeleteLocation(c.Request.Context(), id); err != nil {
 		if e, ok := err.(*errno.Error); ok {
 			util.ErrorResponse(c, e.Code, e.Message)
 		} else {
@@ -165,7 +175,7 @@ func (h *LocationHandler) SearchLocations(c *gin.Context) {
 	}
 
 	// 调用服务层
-	locations, err := h.locationService.SearchLocations(keyword, campusID)
+	locations, err := h.locationService.SearchLocations(c.Request.Context(), keyword, campusID)
 	if err != nil {
 		util.ErrorResponse(c, errno.ErrServerError.Code, errno.ErrServerError.Message)
 		return
