@@ -3,7 +3,6 @@ package assembler
 import (
 	"campus-memory/application/dto"
 	"campus-memory/infra/model"
-	"encoding/json"
 	"time"
 )
 
@@ -22,10 +21,12 @@ func (a *MemoryAssembler) ToMemoryResponse(
 	images []*model.ImageModel,
 	isLiked bool,
 ) *dto.MemoryResponse {
-	// 解析标签
-	var tags []string
-	if memory.Tags != "" {
-		json.Unmarshal([]byte(memory.Tags), &tags)
+	// 从位掩码解析标签
+	tags := make([]string, 0)
+	for bit, name := range model.TagBitToName {
+		if memory.TagsMask&bit != 0 {
+			tags = append(tags, name)
+		}
 	}
 
 	// 转换图片列表
@@ -63,8 +64,13 @@ func (a *MemoryAssembler) ToMemoryResponse(
 
 // ToMemoryModel 将创建请求转换为 Model
 func (a *MemoryAssembler) ToMemoryModel(req *dto.CreateMemoryRequest, creatorID int64, locationName string) *model.MemoryModel {
-	// 序列化标签
-	tagsJSON, _ := json.Marshal(req.Tags)
+	// 计算标签位掩码
+	var tagsMask int64
+	for _, tagName := range req.Tags {
+		if bit, ok := model.TagNameToBit[tagName]; ok {
+			tagsMask |= bit
+		}
+	}
 
 	return &model.MemoryModel{
 		Title:        req.Title,
@@ -74,7 +80,7 @@ func (a *MemoryAssembler) ToMemoryModel(req *dto.CreateMemoryRequest, creatorID 
 		Latitude:     req.Latitude,
 		Longitude:    req.Longitude,
 		IsPublic:     req.IsPublic,
-		Tags:         string(tagsJSON),
+		TagsMask:     tagsMask,
 		Status:       1, // 已发布
 		CreatorID:    creatorID,
 		ViewCount:    0,
@@ -106,8 +112,14 @@ func (a *MemoryAssembler) UpdateMemoryModel(memory *model.MemoryModel, req *dto.
 		memory.IsPublic = *req.IsPublic
 	}
 	if req.Tags != nil {
-		tagsJSON, _ := json.Marshal(req.Tags)
-		memory.Tags = string(tagsJSON)
+		// 计算标签位掩码
+		var tagsMask int64
+		for _, tagName := range req.Tags {
+			if bit, ok := model.TagNameToBit[tagName]; ok {
+				tagsMask |= bit
+			}
+		}
+		memory.TagsMask = tagsMask
 	}
 	memory.UpdatedAt = time.Now()
 }

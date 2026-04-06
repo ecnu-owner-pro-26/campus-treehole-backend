@@ -63,9 +63,9 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	// 1. 微信登录
 	auth := api.Group("/auth")
 	{
-		auth.POST("/wechat/login", authHandler.WechatLogin)   // 微信登录（标准路由）
-		auth.POST("/wechat-login", authHandler.WechatLogin)   // 微信登录（兼容连字符）
-		auth.POST("/login", authHandler.WechatLogin)          // 微信登录（兼容简化路由）
+		auth.POST("/wechat/login", authHandler.WechatLogin) // 微信登录（标准路由）
+		auth.POST("/wechat-login", authHandler.WechatLogin) // 微信登录（兼容连字符）
+		auth.POST("/login", authHandler.WechatLogin)        // 微信登录（兼容简化路由）
 	}
 
 	// 2. 校区和地点列表
@@ -93,7 +93,8 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 	}
 
 	// 5. 记忆列表（公开访问，使用可选认证）
-	r.GET("/api/memories", middleware.OptionalAuth(), memoryHandler.ListMemories)  // 获取记忆列表
+	r.GET("/api/memories", middleware.OptionalAuth(), memoryHandler.ListMemories) // 获取记忆列表
+	r.GET("/tags", memoryHandler.GetTags)
 	r.GET("/api/memories/:id", middleware.OptionalAuth(), memoryHandler.GetMemory) // 获取记忆详情
 
 	// 6. 评论列表（公开访问，使用可选认证）
@@ -117,9 +118,10 @@ func SetupRoutes(db *gorm.DB) *gin.Engine {
 		// 记忆相关路由
 		memories := authenticated.Group("/memories")
 		{
-			memories.POST("", memoryHandler.CreateMemory)       // 创建记忆
-			memories.PUT("/:id", memoryHandler.UpdateMemory)    // 更新记忆
-			memories.DELETE("/:id", memoryHandler.DeleteMemory) // 删除记忆
+			memories.POST("", memoryHandler.CreateMemory)         // 创建记忆
+			memories.PUT("/:id", memoryHandler.UpdateMemory)      // 更新记忆
+			memories.DELETE("/:id", memoryHandler.DeleteMemory)   // 删除记忆
+			memories.GET("/search", memoryHandler.SearchMemories) // 搜索记忆
 
 			// 记忆点赞
 			memories.POST("/:id/like", likeHandler.ToggleLike) // 切换记忆点赞状态

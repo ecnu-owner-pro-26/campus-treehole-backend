@@ -11,8 +11,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-
 	// TODO: 添加 Swagger 支持时取消注释
 	// swaggerFiles "github.com/swaggo/files"
 	// ginSwagger "github.com/swaggo/gin-swagger"
@@ -76,7 +74,6 @@ func main() {
 	log.Println("Database closed successfully")
 
 }
-
 
 // maskString 隐藏字符串中间部分，用于日志输出
 func maskString(s string) string {

@@ -7,6 +7,8 @@ import (
 	"campus-memory/infra/repo"
 	"campus-memory/types/errno"
 	"context"
+	"log"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -41,6 +43,7 @@ func NewMemoryService(
 
 // CreateMemory 创建记忆
 func (s *MemoryService) CreateMemory(ctx context.Context, req *dto.CreateMemoryRequest, creatorID int64) (*dto.MemoryResponse, error) {
+	log.Printf("CreateMemory req.Tags: %v", req.Tags)
 	// 1. 验证地点是否存在
 	location, err := s.locationRepo.GetByID(ctx, *req.LocationID)
 	if err != nil {
@@ -127,13 +130,27 @@ func (s *MemoryService) ListMemories(ctx context.Context, req *dto.MemoryListReq
 		req.SortBy = "latest"
 	}
 
-	// 2. 查询记忆列表
-	memories, total, err := s.memoryRepo.List(ctx, req.LocationID, req.Page, req.PageSize, req.SortBy)
+	// 2. 解析标签筛选条件
+	var tagsMask int64
+	if req.Tags != "" {
+		tagNames := strings.Split(req.Tags, ",")
+		for _, name := range tagNames {
+			name = strings.TrimSpace(name)
+			if bit, ok := model.TagNameToBit[name]; ok {
+				tagsMask |= bit
+			}
+		}
+	}
+
+	// 3. 查询记忆列表
+	memories, total, err := s.memoryRepo.List(ctx, req.LocationID, tagsMask,
+		req.MinLat, req.MaxLat, req.MinLng, req.MaxLng,
+		req.Page, req.PageSize, req.SortBy)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 组装响应列表
+	// 4. 组装响应列表
 	memoryResponses := make([]dto.MemoryResponse, 0, len(memories))
 	for _, memory := range memories {
 		// 获取创建者
@@ -238,4 +255,68 @@ func (s *MemoryService) DeleteMemory(ctx context.Context, id int64, userID int64
 	}
 
 	return nil
+}
+
+// SearchMemories 搜索记忆
+func (s *MemoryService) SearchMemories(ctx context.Context, req *dto.SearchMemoriesRequest, currentUserID *int64) (*dto.SearchMemoriesResponse, error) {
+
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+	if req.PageSize > 100 {
+		req.PageSize = 100
+	}
+	if req.SortBy == "" {
+		req.SortBy = "relevance"
+	}
+
+	// 解析标签筛选
+	var tagsMask int64
+	if req.Tags != "" {
+		tagNames := strings.Split(req.Tags, ",")
+		for _, name := range tagNames {
+			name = strings.TrimSpace(name)
+			if bit, ok := model.TagNameToBit[name]; ok {
+				tagsMask |= bit
+			}
+		}
+	}
+
+	// 标签模式
+	tagMode := req.TagMode
+	if tagMode == "" {
+		tagMode = "or"
+	}
+
+	// 调用仓库层搜索
+	memories, total, err := s.memoryRepo.Search(ctx, req.Keyword, tagsMask, tagMode, req.Page, req.PageSize, req.SortBy, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 组装响应（复用 MemoryResponse 组装逻辑）
+	responses := make([]dto.MemoryResponse, 0, len(memories))
+	for _, memory := range memories {
+		creator, _ := s.userRepo.GetUserByID(ctx, memory.CreatorID)
+		if creator == nil {
+			continue
+		}
+		images, _ := s.imageRepo.GetByMemoryID(ctx, memory.ID)
+		isLiked := false
+		if currentUserID != nil {
+			isLiked, _ = s.likeRepo.CheckLiked(ctx, *currentUserID, memory.ID, dto.LikeTargetTypeMemory)
+		}
+		responses = append(responses, *s.assembler.ToMemoryResponse(memory, creator, images, isLiked))
+	}
+
+	return &dto.SearchMemoriesResponse{
+		List:     responses,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}, nil
 }

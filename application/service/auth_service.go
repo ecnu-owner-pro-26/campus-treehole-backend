@@ -26,10 +26,22 @@ func NewAuthService(userRepo *repo.UserRepo) *AuthService {
 
 // WechatLogin 微信登录业务逻辑
 func (s *AuthService) WechatLogin(ctx context.Context, req *dto.WechatLoginRequest) (*dto.LoginResponse, error) {
-	// 1. 调用微信API获取OpenID
-	session, err := utils.GetWechatOpenID(req.Code)
-	if err != nil {
-		return nil, err
+
+	// ========== 测试硬编码：跳过真实微信 API ==========
+	var session *utils.WechatSession
+	if req.Code == "test_111" {
+		// 使用固定测试数据
+		session = &utils.WechatSession{
+			OpenID:  "test_openid_001",
+			UnionID: "test_unionid_001",
+		}
+	} else {
+		// 正常调用微信 API
+		var err error
+		session, err = utils.GetWechatOpenID(req.Code)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 2. 查询用户是否存在

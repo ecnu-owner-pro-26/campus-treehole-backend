@@ -2,9 +2,11 @@ package handler
 
 import (
 	"campus-memory/application/dto"
+	"campus-memory/infra/model"
 	"campus-memory/infra/util"
 	"campus-memory/types/errno"
 	"context"
+	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +19,7 @@ type MemoryServiceInterface interface {
 	ListMemories(ctx context.Context, req *dto.MemoryListRequest, currentUserID *int64) (*dto.MemoryListResponse, error)
 	UpdateMemory(ctx context.Context, id int64, req *dto.UpdateMemoryRequest, userID int64) error
 	DeleteMemory(ctx context.Context, id int64, userID int64) error
+	SearchMemories(ctx context.Context, req *dto.SearchMemoriesRequest, currentUserID *int64) (*dto.SearchMemoriesResponse, error)
 }
 
 // MemoryHandler 记忆处理器
@@ -188,4 +191,37 @@ func (h *MemoryHandler) DeleteMemory(c *gin.Context) {
 
 	// 4. 返回成功响应
 	util.SuccessResponse(c, nil)
+}
+
+// SearchMemories 搜索记忆
+func (h *MemoryHandler) SearchMemories(c *gin.Context) {
+	var req dto.SearchMemoriesRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		util.ErrorResponse(c, errno.ErrBadRequest.Code, "参数错误: "+err.Error())
+		return
+	}
+	// 获取当前用户ID（用于权限过滤）
+	var currentUserID *int64
+	if uid, exists := c.Get("user_id"); exists {
+		id := uid.(int64)
+		currentUserID = &id
+	}
+
+	result, err := h.memoryService.SearchMemories(c.Request.Context(), &req, currentUserID)
+	if err != nil {
+		util.ErrorResponse(c, errno.ErrServerError.Code, "搜索失败")
+		return
+	}
+
+	util.SuccessResponse(c, result)
+}
+
+// GetTags 获取所有可用标签
+func (h *MemoryHandler) GetTags(c *gin.Context) {
+	tags := make([]string, 0, len(model.TagNameToBit))
+	for name := range model.TagNameToBit {
+		tags = append(tags, name)
+	}
+	sort.Strings(tags) //可选，使标签展示顺序稳定
+	util.SuccessResponse(c, tags)
 }
